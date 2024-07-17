@@ -4,10 +4,12 @@ This are my notes on **ElasticSearch** and **search methods** with focus on Mach
 
 I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide). That course has a Github repository: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
 
+:construction:
+
 The respository is structured as follows:
 
-- ...
 - [`ml_search/`](./ml_search/)
+- ...
 
 Mikel Sagardia, 2024.  
 No guarantees.

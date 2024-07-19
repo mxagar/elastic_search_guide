@@ -73,7 +73,7 @@ Some other properties:
 Elastic has built several products which can interact with each other:
 
 - Elastic Search (ES): search.
-- Kibana: analytics and visualization; dashboard for Elastic Search, ML.
+- **Kibana**: analytics and visualization; dashboard for Elastic Search, ML. [Kibana Demo](https://demo.elastic.co/app/dashboards#/view/welcome_dashboard).
 - Logstash: processing of logs and any data; events from different sources (there are many input/output plugins) are processed (e.g., clean, structure, etc.) and sent to Elastic Search or other destinations.
 - X-Pack: additional features for ES and Kibana, such as 
   - security and access management, 
@@ -83,11 +83,26 @@ Elastic has built several products which can interact with each other:
   - SQL capabilities, besides Query DSL
 - Beats - Filebeats, Metricbeats, etc.: lightweight agents which collect and send data to ES. Filebeats collects logs. They are for data ingestion.
 
-[Kibana Demo](https://demo.elastic.co/app/dashboards#/view/welcome_dashboard).
+![Elastic Stack](./assets/elastic_stack.png)
 
 ### Common Application Architectures
 
+Let's consider an e-commerce site, where users can buy things via a web store/page. We have these components:
 
+- The web frontend.
+- The application backend.
+- A relational DB where all the products are stored.
+
+If we want to add realtime search capabilities to the web page so that users can find things easily, we need to add **Elastic Search**.
+
+The best approach is to **replicate** all the data entries in the DB into ES; we can do that 
+
+- initially with a script
+- and then, we let the backend update ES when the DB is updated, too.
+
+Then, we might connect **Kibana** to ES in order to visualize data in a dashboard.
+
+![Architecture: ](./assets/architecture_2.png)
 
 ## Getting Started
 

@@ -345,7 +345,121 @@ GET /_cat/indices?v
 
 ### Interacting with the Cluster via cURL and Python
 
+We can interact with ES using its REST API, e.g., via `cURL`. We need to:
 
+- use a certificate located in the elastic package (although that can be bypassed with the flag `--insecure`),
+- use HTTPS, not HTTP,
+- use our user and PW credentials.
+
+```powershell
+# General structure
+cd /path/to/elasticsearch
+curl --cacert config/certs/http_ca.crt -u elastic:<YOUR_PASSWORD_HERE> [--insecure] -X <HTTP_METHOD> [-H ...] [-d ...] <URL+API+Command+Query>
+# NOTE: Sometimes the certificate doesn't work,
+# so we can add the flag --insecure.
+# This bypasses the SSL certificate verification.
+# That should not be done in production!
+# The option -H is a header, often used with -d
+# and -d is the data we send.
+# Example (Windows needs to escape "):
+# ... -H "Content-Type: application/json" -d '{"name":"John", "age":30}'
+# ... -H "Content-Type: application/json" -d '{\"name\":\"John\", \"age\":30}'
+
+# Set variables in Powershell for easier and more secure use.
+# To use them: $Env:ELASTIC_USER
+$Env:ELASTIC_USER = "elastic"
+$Env:ELASTIC_PASSWORD = "..."
+# Bash. To use them: $ELASTIC_USER
+export ELASTIC_USER="elastic"
+export ELASTIC_PASSWORD="..."
+
+# Example: Basic query to get general cluster info
+cd C:\Users\msagardia\packages\elasticsearch-8.14.3
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200
+
+# Example: Get the index products (not created yet)
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET -H "Content-Type: application/json" -d '{ \"query\": { \"match_all\": {} } }' https://localhost:9200/products/_search
+# Bash: -d '{ "query": { "match_all": {} } }'
+
+# Example: GET /_cat/nodes?v -> get all nodes
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/nodes?v"
+
+# Example: GET /_cat/indices?v -> list all indices
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/indices?v"
+```
+
+Besides using `cURL`, we can also connect to Elastic Search using Python. The notebook [`notebooks/elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb) shows how to do that via `requests` and the package `elasticsearch`:
+
+```python
+import os
+import requests
+from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
+load_dotenv()
+
+elastic_user = os.getenv("ELASTIC_USER")
+elastic_password = os.getenv("ELASIC_PASSWORD")
+
+### -- requests
+
+# Define the URL
+url = "https://localhost:9200/_cat/nodes?v"
+
+# Make the GET request
+response = requests.get(
+    url,
+    auth=HTTPBasicAuth(elastic_user, elastic_password),
+    #verify=False,  # Disable SSL verification
+    verify="C:\\Users\\msagardia\\packages\\elasticsearch-8.14.3\\config\\certs\\http_ca.crt",
+    proxies={"http": None, "https": None}  # Bypass proxy
+)
+
+# Print the response
+print(response.text)
+
+# Define the URL
+url = "https://localhost:9200/_cat/indices?v"
+
+# Make the GET request
+response = requests.get(
+    url,
+    auth=HTTPBasicAuth(elastic_user, elastic_password),
+    #verify=False,  # Disable SSL verification
+    verify="C:\\Users\\msagardia\\packages\\elasticsearch-8.14.3\\config\\certs\\http_ca.crt",
+    proxies={"http": None, "https": None}  # Bypass proxy
+)
+
+# Print the response
+print(response.text)
+
+### -- elasticsearch
+
+import warnings
+from urllib3.exceptions import InsecureRequestWarning
+from elasticsearch import Elasticsearch
+
+# Suppress only the specific InsecureRequestWarning
+warnings.simplefilter('ignore', InsecureRequestWarning)
+
+# Create an instance of the Elasticsearch client
+es = Elasticsearch(
+    ['https://localhost:9200'],
+    basic_auth=(elastic_user, elastic_password),
+    verify_certs=False  # This disables SSL verification, similar to --insecure
+)
+
+# Make a GET request to /_cat/nodes?v
+response = es.cat.nodes(format="json")
+
+# Print the response
+print(response)
+
+# Make a GET request to /_cat/indices?v
+response = es.cat.indices(format="json")
+
+# Print the response
+print(response)
+```
 
 ### Sharding and Scalability
 

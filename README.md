@@ -2,14 +2,12 @@
 
 This are my notes on **ElasticSearch** and **search methods** with focus on Machine Learning.
 
-I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide). That course has a Github repository: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
+I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide), but extended it mainly consulting the official Elastic documentation. The couser by Bo Andersen has a Github repository with a summary of all the commands used: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
 
-:construction:
-
-The respository is structured as follows:
+My respository is structured as follows:
 
 - [`ml_search/`](./ml_search/)
-- ...
+- [`notebooks/`](./notebooks/)
 
 Mikel Sagardia, 2024.  
 No guarantees.
@@ -27,7 +25,10 @@ Table of contents:
       - [Unix: Mac OSX, Linux](#unix-mac-osx-linux)
       - [Docker](#docker)
     - [Basic Architecture: Cluster, Nodes, Documents, Indices](#basic-architecture-cluster-nodes-documents-indices)
-    - [Inspecting a Cluster](#inspecting-a-cluster)
+    - [Inspecting a Cluster with the Console](#inspecting-a-cluster-with-the-console)
+    - [Interacting with the Cluster via cURL and Python](#interacting-with-the-cluster-via-curl-and-python)
+    - [Sharding and Scalability](#sharding-and-scalability)
+    - [Node Roles](#node-roles)
   - [Managing Documents](#managing-documents)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
@@ -211,6 +212,8 @@ Now everything is setup. We can log in into Kibana, which is like the GUI for ES
 
 To shut down, we need to `Ctrl+C` both Terminals. To start again, we need to run `bin\elasticsearch.bat` and `bin\kibana.bat` in separate terminals again.
 
+![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
+
 #### Unix: Mac OSX, Linux
 
 Full, official guide: [Install Elasticsearch from archive on Linux or MacOS](https://www.elastic.co/guide/en/elasticsearch/reference/current/targz.html).
@@ -265,9 +268,88 @@ Documents are stored in **Indices**:
 
 ![Indices](./assets/indices.png)
 
-### Inspecting a Cluster
+### Inspecting a Cluster with the Console
+
+![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
+
+When we have started both `elasticsearch` and `kibana`, we open the web UI under the URL:
+
+[`http://localhost:5601/`](http://localhost:5601/)
+
+Then, we can start the **Console** in the web UI:
+
+    Hamburger Menu > Management > Dev Tools
+
+We can use the console to communicate with ES:
+
+- The console uses the REST API under the hood.
+- The console is the easiest way to communicate with ES: it has autocompletion.
+- However, we often will use the REST API via cURL or related services.
+
+The console takes HTTP methods:
+
+1. **GET:** Retrieve data from Elasticsearch, such as documents or index information.
+2. **POST:** Send data to Elasticsearch, typically used for creating or updating documents.
+3. **PUT:** Create or replace documents or indices.
+4. **DELETE:** Remove documents or indices.
+5. **HEAD:** Retrieve metadata without the body.
+6. **PATCH:** Apply partial updates to documents.
+
+The query structure is
+
+    HTTP Method + API & Command & Query
+    JSON (optional parameters, if required)
+
+For instance:
+
+```bash
+# Get cluster health: _cluster API, health Command
+GET /_cluster/health
+```
+
+When we run that command (play button), we get back a `JSON`:
+
+```json
+{
+  "cluster_name": "elasticsearch",
+  "status": "green",
+  "timed_out": false,
+  "number_of_nodes": 1,
+  "number_of_data_nodes": 1,
+  "active_primary_shards": 31,
+  "active_shards": 31,
+  "relocating_shards": 0,
+  "initializing_shards": 0,
+  "unassigned_shards": 0,
+  "delayed_unassigned_shards": 0,
+  "number_of_pending_tasks": 0,
+  "number_of_in_flight_fetch": 0,
+  "task_max_waiting_in_queue_millis": 0,
+  "active_shards_percent_as_number": 100
+}
+```
+
+Further examples:
+
+```bash
+# List all nodes: _cat API (Compact Aligned Text), nodes Command, v Query (verbose)
+# In our case we see a single node and its IP + properties
+GET /_cat/nodes?v
+
+# List indices
+# We only have system indices, leading with a .
+GET /_cat/indices?v
+```
+
+![Console](./assets/console.png)
+
+### Interacting with the Cluster via cURL and Python
 
 
+
+### Sharding and Scalability
+
+### Node Roles
 
 ## Managing Documents
 

@@ -1,0 +1,26 @@
+# conda env create --file conda.yaml
+name: elastic
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - jupyter
+  - jupyterlab
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - requests
+  - pip:
+      - autopep8
+      - elasticsearch
+      - elasticsearch-dsl
+      - joblib
+      - pydantic
+      - pytest
+      - python-dotenv
+      - requests
+      - scikit-learn
+      - sentence-transformers
+      - setuptools

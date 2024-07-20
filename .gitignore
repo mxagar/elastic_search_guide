@@ -5,3 +5,4 @@ __pycache__
 *.pyc
 complete-guide-to-elasticsearch
 slides
+elastic_cloud.txt

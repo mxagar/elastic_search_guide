@@ -27,7 +27,13 @@ Table of contents:
     - [Basic Architecture: Cluster, Nodes, Documents, Indices](#basic-architecture-cluster-nodes-documents-indices)
     - [Inspecting a Cluster with the Console](#inspecting-a-cluster-with-the-console)
     - [Interacting with the Cluster via cURL and Python](#interacting-with-the-cluster-via-curl-and-python)
+    - [Building an Index](#building-an-index)
+      - [Inverted Index](#inverted-index)
+      - [B-Tree](#b-tree)
+      - [Doc Values](#doc-values)
+      - [Putting it All Together](#putting-it-all-together)
     - [Sharding and Scalability](#sharding-and-scalability)
+    - [Replication](#replication)
     - [Node Roles](#node-roles)
   - [Managing Documents](#managing-documents)
   - [Mapping \& Analysis](#mapping--analysis)
@@ -461,7 +467,106 @@ response = es.cat.indices(format="json")
 print(response)
 ```
 
+### Building an Index
+
+This is my understanding of how an index works. The key idea is that we'd like to be able to search very quickly our documents.
+
+Let's imagine we want to build an index similar to the ones in Elastic Search. Our goal is fast search in our database.
+
+On one side, we store our Documents, probably as files.
+
+On the other side we build the following structures:
+
+- An **inverted index** which maps terms with documents and frequencies.
+- A **B-tree**, which allows fast search and filtering of given (often data/numeric) fields.
+- **Doc Values** or fields in **Column Format**, which allow faster sorting and aggregation operations.
+
+In the following, I explain my intuitions of each of them.
+
+#### Inverted Index
+
+An inverted index is a table which maps terms with document ids, positions and frequencies. A possible data structure for that would by a hash table (like a Python dictionary).
+
+An inverted index can be built as follows:
+
+- Each new document is processed by tokenizing (& stemming) is text.
+- For each term/token an entry is created and maintained, which contains:
+  - List of document ids where the term/token appears.
+  - Positions in the document where the term/token appears: field, character position, etc.
+  - TF-IDF frequencies to understand how relevant the term is.
+
+TF-IDF, Term Frequency Inverse Document Frequency:
+
+- TF: Measures how frequently a term (word) occurs in a document.
+
+      TF(t,d) = num times term t appears in document d / total num terms in d
+
+- IDF: Measures the importance of a term in the corpus.
+
+      IDF(t,D) = log(total num documents in corpus D / num documents containing term t)
+
+- TF-IDF: **Importance of a term in a document.**
+
+      TFIDF(t,d,D) = TF(t,d) * IDF(t,D)
+
+Probably, for each token = term t, a table of `TF(t,d)` is maintained, as well as the value `IDF(t,D)`. Then, the `TFIDF(t,d,D)` is updated, which is unique for each `(t,d)` pair.
+
+When we start a text search, the query will be tokenized into the indexed terms and those terms are searched in the inverted index (hash table).
+
+With that, we have a list of all the candidate documents. We can:
+
+- get a set of documents common to all terms
+- rank the set according to their importance thanks to the `TFIDF(t,d,D)`; the TFIDF is associated to each term-document, but we could compute an aggregate value for each query-document pair.
+
+#### B-Tree
+
+
+
+
+#### Doc Values
+
+
+
+#### Putting it All Together
+
+
+
+
 ### Sharding and Scalability
+
+If our node is full, we can create a new one which will increase the storage capacity of the cluster. In the process, **Sharding** is used:
+
+- Shrading is a way to divide indices into smaller pieces.
+- Each piece is referred to as shard.
+- Sharding is done at the index level.
+- Main purpose: horizontally scale data volume.
+- Each shard is independent and a almost a fully functional index on its own.
+- Each shard is an Apache Lucene index.
+- Each shard can be as big as possible in terms of storage, but it can contain 2 billion documents.
+- When we apply sharding, each query is parallelized, i.e., each node and shard run the query.
+- We can have primary and replica shard:
+  - Primary Shards: These are the main shards that contain the original data.
+  - Replica Shards: These are copies of the primary shards and provide failover capabilities, ensuring high availability.
+
+For instance, if we have an index of 600 GB and 2 nodes of 500 GB each, we can divide the index in 2 shards, A and B. Then, each shard goes to a node.
+
+![Sharding](./assets/sharding.png)
+
+The column `pri` when we run `GET request to /_cat/indices?v` is the number of primary shards.
+
+An index contains a single shard by default. If we need to create a new shard, we can use the split API. Similarly, we can recue the number of shards with a shrink API. The number of shards we should use depends on
+
+- the number of indices
+- the number of nodes and their capacity
+- the number of queries
+- ...
+
+Good rule of thumb: if we're going to have millions of documents, use a couple of shards. That number 5 was the default in the older versions.
+
+
+### Replication
+
+
 
 ### Node Roles
 

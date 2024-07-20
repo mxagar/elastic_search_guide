@@ -26,7 +26,8 @@ Table of contents:
       - [Windows](#windows)
       - [Unix: Mac OSX, Linux](#unix-mac-osx-linux)
       - [Docker](#docker)
-    - [Basic Architecture](#basic-architecture)
+    - [Basic Architecture: Cluster, Nodes, Documents, Indices](#basic-architecture-cluster-nodes-documents-indices)
+    - [Inspecting a Cluster](#inspecting-a-cluster)
   - [Managing Documents](#managing-documents)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
@@ -187,7 +188,7 @@ When we run `bin\elasticsearch.bat` for the first time a **cluster is created** 
 - A fingerprint certificate; data is transmitted encrypted.
   - We copy it to `.env`: `ELASTIC_FINGERPRINT`.
 - An enrollment token: necessary for secure communications with ES from other nodes, e.g., Kibana.
-  - We copy the token to `.env`: `ELASTIC_TOKEN`.
+  - We copy the token to `.env`: `ELASTIC_ENROLLMENT_TOKEN`.
   - We use it to enroll Kibana.
   - The token is valid for 30 mins, but we can create new ones: `bin/elasticsearch-create-enrollment-token.bat -s kibana`
   - We can use this enrollment token to add other nodes, too
@@ -204,7 +205,7 @@ bin\kibana.bat
 After a short moment, Kibaba is ready at port `5601`:
 
 - We open the URL in the Terminal, which has a security code: `http://localhost:5601/?code=xxxxxx`.
-- We are requested for the enrollment token, `ELASTIC_TOKEN`, which we paste.
+- We are requested for the enrollment token, `ELASTIC_ENROLLMENT_TOKEN`, which we paste.
 
 Now everything is setup. We can log in into Kibana, which is like the GUI for ES. We can user the superuser credentials.
 
@@ -231,9 +232,42 @@ bin/kibana
 
 Full, official guide: [Install Elasticsearch with Docker](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html).
 
-### Basic Architecture
+### Basic Architecture: Cluster, Nodes, Documents, Indices
 
-TBD.
+Elastic Search is distirbuted and it consists of **nodes** within a **cluster**:
+
+- When we start an ES instance, it is really a **node** which can contain some TBs of data.
+- If our data grows, we can start another instance = another node.
+- In developement, we can start several nodes on our device without the need of dealing with VMs or containers; in production, different nodes are usually assigned to different VMs or containers.
+- Each/all node/s belong to a **cluster**. Usually we have one cluster for application. Clusters are completely independent from each other.
+- When a node starts up:
+  - it joins an existing cluster
+  - or it starts a cluster and joins to it.
+  - Therefore, even a setup with a single node is nested in a cluster.
+
+![Cluster](./assets/cluster.png)
+
+Each data in our nodes is a **Document**, which:
+
+- can be represented as a `JSON`,
+- is equivalent to a row in a relational DB,
+- consists of the **Fields** we want, which are equivalent to columns in a relational DB.
+
+In addition to our fields, we also store some other metadata in the Document `JSONs`.
+
+![Document](./assets/document.png)
+
+Documents are stored in **Indices**:
+
+- Indices are logical groups of Documents, e.g., *People Index*, *Departments Index*.
+- There are no limits in terms of how many Documents go into an Index.
+- We run our search queries against Indices.
+
+![Indices](./assets/indices.png)
+
+### Inspecting a Cluster
+
+
 
 ## Managing Documents
 

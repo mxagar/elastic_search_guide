@@ -19,7 +19,7 @@ Table of contents:
 - [Elastic Search Guide](#elastic-search-guide)
   - [Introduction](#introduction)
     - [Elastic Stack](#elastic-stack)
-    - [Common Application Architectures](#common-application-architectures)
+    - [Common Application Architecture](#common-application-architecture)
   - [Getting Started](#getting-started)
   - [Managing Documents](#managing-documents)
   - [Mapping \& Analysis](#mapping--analysis)
@@ -85,7 +85,7 @@ Elastic has built several products which can interact with each other:
 
 ![Elastic Stack](./assets/elastic_stack.png)
 
-### Common Application Architectures
+### Common Application Architecture
 
 Let's consider an e-commerce site, where users can buy things via a web store/page. We have these components:
 
@@ -100,9 +100,26 @@ The best approach is to **replicate** all the data entries in the DB into ES; we
 - initially with a script
 - and then, we let the backend update ES when the DB is updated, too.
 
-Then, we might connect **Kibana** to ES in order to visualize data in a dashboard.
+Then, we might connect **Kibana** to ES in order to visualize data in a dashboard: number of orders per week, revenue, etc.
 
-![Architecture: ](./assets/architecture_2.png)
+![Architecture: Basic](./assets/architecture_2.png)
+
+As our web grows, we might have increeased traffic and the servers might be suffering; that's when we add **Metricbeat**, which monitors performance and resources on the backend machine and sends them to ES. Basically, ES opens an ingest node where Metricbeat sends data. We can visualize all that in Kibana, too.
+
+Similarly, we can monitor access and error logs. We do that with **Filebeat**, similar to Metricbeat.
+
+As the web grows we might need some data processing before ingestion to ES. One option would be to implement that processing in the backend, but it has several drawbacks: 
+
+- the backend should run the web, not loose resources processing logs, 
+- if we have a decentrilized architecture (i.e., microservices), the logging is also decentralized, and we might want to have a centralized and homogeneous processing.
+
+Thus, it makes sense to add **Logstash** to the architecture, which enables log/data processing before ingestion to ES. Although the data from Metricbeat often times doesn't need to be processed, the data from Filebeat could need to be processed, so it is first sent to Logstash, which transforms it and sends it to ES. However, we always have the felxibility to send the data to ES first, without any processing.
+
+![Architecture: Full Elastic Stack](./assets/architecture_3.png)
+
+<!--
+Our database and ES should be synchronized. However, ideally, our application should have read permissions in ES. How is that possible?
+-->
 
 ## Getting Started
 

@@ -24,6 +24,7 @@ Table of contents:
       - [Windows](#windows)
       - [Unix: Mac OSX, Linux](#unix-mac-osx-linux)
       - [Docker](#docker)
+      - [Summary: How to Start Elastic Search](#summary-how-to-start-elastic-search)
     - [Basic Architecture: Cluster, Nodes, Documents, Indices](#basic-architecture-cluster-nodes-documents-indices)
     - [Inspecting a Cluster with the Console](#inspecting-a-cluster-with-the-console)
     - [Interacting with the Cluster via cURL and Python](#interacting-with-the-cluster-via-curl-and-python)
@@ -32,7 +33,9 @@ Table of contents:
       - [B-Tree](#b-tree)
       - [Doc Values](#doc-values)
     - [Sharding and Scalability](#sharding-and-scalability)
-    - [Replication](#replication)
+    - [Replication and Snapshots](#replication-and-snapshots)
+      - [Creating Indices](#creating-indices)
+    - [Adding Nodes to the Cluster](#adding-nodes-to-the-cluster)
     - [Node Roles](#node-roles)
   - [Managing Documents](#managing-documents)
   - [Mapping \& Analysis](#mapping--analysis)
@@ -217,6 +220,12 @@ Now everything is setup. We can log in into Kibana, which is like the GUI for ES
 
 To shut down, we need to `Ctrl+C` both Terminals. To start again, we need to run `bin\elasticsearch.bat` and `bin\kibana.bat` in separate terminals again.
 
+**IMPORTANT: However, we might need to add the following line to the file `.../kibana-8.14.3/config/kibana.yaml`**:
+
+```
+elasticsearch.hosts: ["https://localhost:9200"]
+```
+
 ![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
 
 #### Unix: Mac OSX, Linux
@@ -239,6 +248,60 @@ bin/kibana
 #### Docker
 
 Full, official guide: [Install Elasticsearch with Docker](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html).
+
+#### Summary: How to Start Elastic Search
+
+```powershell
+## -- Terminal 1
+# Elastic Search: go to extracted directory and run binary
+cd C:\Users\msagardia\packages\elasticsearch-8.14.3
+bin\elasticsearch.bat
+# Unix: bin/elasticsearch
+# Wait until cluster up & running: "... current.health="GREEN"..."
+# If provided, copy to .env
+# - ELASTIC_USER
+# - ELASIC_PASSWORD
+# - ELASTIC_FINGERPRINT
+# - ELASTIC_ENROLLMENT_TOKEN
+# To get new ELASTIC_ENROLLMENT_TOKEN
+# bin/elasticsearch-create-enrollment-token.bat -s kibana
+# Also, after first time, add to .../kibana-8.14.3/config/kibana.yaml:
+# elasticsearch.hosts: ["https://localhost:9200"]
+
+## -- Terminal 2
+# Kibana: go to extracted directory and run binary
+cd C:\Users\msagardia\packages\kibana-8.14.3
+bin\kibana.bat
+# Unix: bin/kibana
+# Use ELASTIC_USER & ELASIC_PASSWORD as credentials
+
+## -- Browser
+# Kibana Web UI: http://localhost:5601
+# Elastic Search API: https://localhost:9200
+```
+
+Troublesooting: If we get an error, make sure that `.../kibana-8.14.3/config/kibana.yaml` contains the line
+
+```
+elasticsearch.hosts: ["https://localhost:9200"]
+```
+
+And, additionally, check:
+
+```powershell
+# Set variables in Powershell for easier and more secure use.
+# To use them: $Env:ELASTIC_USER
+$Env:ELASTIC_USER = "elastic"
+$Env:ELASTIC_PASSWORD = "..."
+# Bash. To use them: $ELASTIC_USER
+export ELASTIC_USER="elastic"
+export ELASTIC_PASSWORD="..."
+
+# Example: Basic query to get general cluster info
+cd C:\Users\msagardia\packages\elasticsearch-8.14.3
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200
+
+```
 
 ### Basic Architecture: Cluster, Nodes, Documents, Indices
 
@@ -635,12 +698,57 @@ An index contains a single shard by default. If we need to create a new shard, w
 
 Good rule of thumb: if we're going to have millions of documents, use a couple of shards. That number 5 was the default in the older versions.
 
+### Replication and Snapshots
 
-### Replication
+Sometimes node fail; a way to enable fault-tolerance is to replicate shards. Elastic Search replicates shards by default: shards are copied, creating replica shards:
+
+-  When creating an index we can choose how many replicas we'd like (default is 1 replica, i.e, we have 2 shards: primary + replica).
+- A replica shard should be always in a different node as the primary shard, i.e., the shard it was copied from, because otherwise we are not fault-tolerant. Thus, replication makes sense in terms of robustness when we have a cluster with at least 2 nodes.
+  - In a cluster with a single node, the default replica will be unassigned and the index will be in yellow status.
+- A replica shard can be used instead of the primary shard for all the operations.
+- For critical operations, we replicate at least 2x, i.e., we'l nned at least 3 nodes.
+
+Replication not only ensure fault-tolerance, but it can also ease the use of parallel queries: we run the same query in two index (shard) copies.; thus, the throughput increases. We can apply that also by having replica shards in the same node, i.e., the same copies in the same node. That is called a **replication group**. In those cases, multi-threding is used.
+
+![Replicas](./assets/replicas.png)
+
+In addition to replication, Elastic Search also allows to take snapshots and backups:
+
+- Snapshots can be used to restore to a given point.
+- Snapshots can be taken at index level or for the entire cluster.
+- Snapshots are state dumps to a file; those files can be used to restore the cluster, if something goes wrong.
+
+#### Creating Indices
+
+- When we create an index, a replica is automaticaly generated
+- However, if we have a single node, that replica is unassigned, so the index is in "yellow" state, not "green" state.
+- The system indices (those with leading . in their name) are auto-replicated when we create new nodes; i.e., with one node, they have no replicas.
+
+Here's some commands to create an index and inspect it:
+
+```bash
+# Create Index pages
+PUT /pages
+
+# Get list of all indices
+# pages should appear, but in "yellow" status, 
+# because its shard replica is not assigned to another node
+GET /_cat/indices?v
+
+# Get list of all shards
+# pages shoudl appear 2x, but the replica shard should be UNASSIGNED
+GET /_cat/shards?v
+```
+
+![Replica shards](./assets/replica_shards.png)
+
+### Adding Nodes to the Cluster
 
 
 
 ### Node Roles
+
+
 
 ## Managing Documents
 

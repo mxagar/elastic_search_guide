@@ -775,7 +775,22 @@ I we don't add further nodes, we can continue, but the cluster and the shards/in
 
 ### Node Roles
 
+Depending what they're used for, nodes can have different roles:
 
+- Master: `node.master: true | false`. Resposible for performing cluster-wide operations, e.g., deleting indices, etc. For large projects, we should have dedicated master nodes.
+- Data: `node.data: true | false`. Stores data and perform search queries.
+- Ingest: `node.ingest: true | false`. Runs ingest pipelines, i.e., processing and adding a document to an index. Such a pipeline is like a simplified Logstash pipeline, where simple transformations are performed.
+- Machine Learning:
+  - `node.ingest: true | false`: to run ML jobs.
+  - `xpack.ml.enabled: true | false`: enable/disable ML API for the node
+- Coordination: Distribution of queries and aggregation of results; if a node has none of the previous nodes, it is a coordination node.
+- Voting-only: `node.voting_only: true | false`. Rarely used; it votes which is the master node. It appears in very large projects.
+
+We can see the roles when we run the command `GET /_cat/nodes?v`.
+
+The field `node.role` in the response table contains the initial letters of each role assigned to each node.
+
+![Nodes](./assets/nodes.png)
 
 ## Managing Documents
 

@@ -39,8 +39,12 @@ Table of contents:
     - [Node Roles](#node-roles)
   - [Managing Documents](#managing-documents)
     - [Creating and Deleting Indices](#creating-and-deleting-indices)
-    - [Indexing Documents = Adding Documents](#indexing-documents--adding-documents)
+    - [Indexing and Deleting Documents](#indexing-and-deleting-documents)
     - [Retrieving Documents by ID](#retrieving-documents-by-id)
+    - [Updating Documents](#updating-documents)
+    - [Scripted Updates](#scripted-updates)
+    - [Upserts](#upserts)
+    - [Routing](#routing)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
@@ -815,11 +819,13 @@ PUT /products
 }
 ```
 
-### Indexing Documents = Adding Documents
+### Indexing and Deleting Documents
+
+Indexing a document means to create/add it into the index.
 
 ```
-# Simple JSON Document
-# An _id is automatically created
+# Simple JSON Document indexed = created
+# An _id is automatically assigned if not provided
 # As we can see in the returned JSON
 # Also, we see we have 2 shards
 POST /products/_doc
@@ -829,15 +835,20 @@ POST /products/_doc
   "in_stock": 10
 }
 
-# Here, we index a Document
+# Here, we index a Document = we create one
 # but we force it to be of id 100
 # Note that the HTTP method is PUT, not POST!
+# We can use the same code
+# to replace entirely a Document
 PUT /products/_doc/100
 {
   "name": "Toaster",
   "price": 49,
   "in_stock": 4
 }
+
+# Delete the document with ID 100
+DELETE /products/_doc/100
 ```
 
 ### Retrieving Documents by ID
@@ -865,7 +876,163 @@ We get:
 }
 ```
 
-If the `id=100` would not exist, we'd get `"found":false`.
+Notes:
+
+- If the `id=100` would not exist, we'd get `"found":false`.
+- The `JSON` has many metadata fields; the actual document is in `_source`.
+
+### Updating Documents
+
+In reality, Documents are **inmutable** in Elastic Search. Under the hood, when we update a Document, we replace it with a new one which contains teh modifications. 
+
+```
+# Update an existing field
+# To update a Document, 
+# we need to pass a JSON with an object "doc"
+# The returned JSON contains "result": "updated"
+POST /products/_update/100
+{
+  "doc": {
+    "in_stock": 3
+  }
+}
+
+# Add a new field: "tags": ["electronics"]
+POST /products/_update/100
+{
+  "doc": {
+    "tags": ["electronics"]
+  }
+}
+```
+
+If we want to completely replace a Document, though, we can explicitly use `PUT`, which is intended for creating documents (recall, there is no real updating in ES, but entirely replacing: remove + create):
+
+```
+PUT /products/_doc/100
+{
+  "name": "Toaster",
+  "price": 79,
+  "in_stock": 4
+}
+```
+
+### Scripted Updates
+
+We can write scripts in the `JSON` used to perform the update. The scripts go in a `script` object, which contains:
+
+- a `source` field with the script
+- a `params` field with the parameters used in the script
+
+The Document entity is accessed by the variable `ctx`, short for context. This variable has several methods/data, e.g.:
+
+- `ctx.op`: with this, we can modify the update operation nature, e.g.:
+  - `noop`: no update done
+  - `delete`: Document deleted
+- `ctx._source`: this gives us access to the Document `JSON`
+
+Additionally, we can add conditionals
+
+```
+# Go to Document with ID 100
+# Decrease by one unit the field in_stock
+POST /products/_update/100
+{
+  "script": {
+    "source": "ctx._source.in_stock--"
+  }
+}
+
+# Go to Document with ID 100
+# Assign the value 10 to the field in_stock
+POST /products/_update/100
+{
+  "script": {
+    "source": "ctx._source.in_stock = 10"
+  }
+}
+
+# Go to Document with ID 100
+# Modify field in_stock with the values in params
+POST /products/_update/100
+{
+  "script": {
+    "source": "ctx._source.in_stock -= params.quantity",
+    "params": {
+      "quantity": 4
+    }
+  }
+}
+
+# Go to Document with ID 100
+# If in_stock == 0, perform no operation
+# Else, decrease in_stock in one unit
+POST /products/_update/100
+{
+  "script": {
+    "source": """
+      if (ctx._source.in_stock == 0) {
+        ctx.op = 'noop';
+      }
+      
+      ctx._source.in_stock--;
+    """
+  }
+}
+
+POST /products/_update/100
+{
+  "script": {
+    "source": """
+      if (ctx._source.in_stock > 0) {
+        ctx._source.in_stock--;
+      }
+    """
+  }
+}
+
+# Go to Document with ID 100
+# If in_stock < 0, delete the Document (product)
+# Else, decrease in_stock in one unit
+POST /products/_update/100
+{
+  "script": {
+    "source": """
+      if (ctx._source.in_stock < 0) {
+        ctx.op = 'delete';
+      }
+      
+      ctx._source.in_stock--;
+    """
+  }
+}
+```
+
+### Upserts
+
+*Upserting* means:
+
+- If the Document exists, it is updated.
+- Else, a new Document is created.
+
+```
+# Upsert: Update or Insert/Create
+# If the product 101 doesn't exist, this creates it
+# Else, it increases in_stock in one unit
+POST /products/_update/101
+{
+  "script": {
+    "source": "ctx._source.in_stock++"
+  },
+  "upsert": {
+    "name": "Blender",
+    "price": 399,
+    "in_stock": 5
+  }
+}
+```
+
+### Routing
 
 
 

@@ -38,6 +38,9 @@ Table of contents:
     - [Adding Nodes to the Cluster](#adding-nodes-to-the-cluster)
     - [Node Roles](#node-roles)
   - [Managing Documents](#managing-documents)
+    - [Creating and Deleting Indices](#creating-and-deleting-indices)
+    - [Indexing Documents = Adding Documents](#indexing-documents--adding-documents)
+    - [Retrieving Documents by ID](#retrieving-documents-by-id)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
@@ -794,9 +797,77 @@ The field `node.role` in the response table contains the initial letters of each
 
 ## Managing Documents
 
-TBD.
+### Creating and Deleting Indices
 
-:construction:
+```
+# Create an index
+PUT /pages
+
+# Delete an index
+DELETE /pages
+
+# Create an index with specific properties
+PUT /products
+{
+  "settings": {
+    "number_of_shards": 2
+  }
+}
+```
+
+### Indexing Documents = Adding Documents
+
+```
+# Simple JSON Document
+# An _id is automatically created
+# As we can see in the returned JSON
+# Also, we see we have 2 shards
+POST /products/_doc
+{
+  "name": "Coffee Maker",
+  "price": 64,
+  "in_stock": 10
+}
+
+# Here, we index a Document
+# but we force it to be of id 100
+# Note that the HTTP method is PUT, not POST!
+PUT /products/_doc/100
+{
+  "name": "Toaster",
+  "price": 49,
+  "in_stock": 4
+}
+```
+
+### Retrieving Documents by ID
+
+```
+# Retrieve Document by ID
+GET /products/_doc/100
+```
+
+We get:
+
+```json
+{
+  "_index": "products",
+  "_id": "100",
+  "_version": 1,
+  "_seq_no": 1,
+  "_primary_term": 1,
+  "found": true,
+  "_source": {
+    "name": "Toaster",
+    "price": 49,
+    "in_stock": 4
+  }
+}
+```
+
+If the `id=100` would not exist, we'd get `"found":false`.
+
+
 
 ## Mapping & Analysis
 

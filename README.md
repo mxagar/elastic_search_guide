@@ -188,6 +188,8 @@ bin\elasticsearch.bat
 # Unix: bin/elasticsearch
 ```
 
+:warning: **IMPORTANT**: save the ZIP archive, since we need to extract it every time we want a new node!
+
 When we run `bin\elasticsearch.bat` for the first time a **cluster is created** and its configuration is performed in some minutes. Some values are created are delivered:
 
 - A **superuser** and its password, we copy and save them, e.g., in `.env`
@@ -744,7 +746,32 @@ GET /_cat/shards?v
 
 ### Adding Nodes to the Cluster
 
+Sharding for fault-tolerance and replication for increasing throughput can be done if we have at least 2 nodes. In managed cloud solutions, nodes are added automatically. However, in local deployments, we need to create nodes manually.
 
+If we are running Elastic Search in a development environment, we can set new nodes as follows:
+
+- Download and extract again the elasticsearch archive in the `.../packages` directory. Name that new folder `elastic-second-node`. It should be at the same level as `elasticsearch-8.14.3/`, which is the first node. Do not copy the folder `elasticsearch-8.14.3/`, but extract a new folder frmo the original archive!
+- Open `.../packages/elastic-second-node/config/elasticsearch.yaml` and uncomment/modify the line `node.name = elastic-second-node`
+- Create an enrollment token for the second node.
+  ```powershell
+  cd .../packages/elasticsearch-8.14.3
+  bin\elasticsearch-create-enrollment-token.bat --scope node
+  # we take/copy the ENROLLMENT_TOKEN
+  ```
+- Go to `.../packages/elastic-second-node` and start a second `elasticsearch` with the enrollment token:
+  ```powershell
+  cd .../packages/elastic-second-node
+  bin\elasticsearch --enrollment-token <ENROLLMENT_TOKEN>
+  ```
+- Go to Kibana/Web UI and check the cluster: now, we should have 2 nodes.
+- We can kill a node simple with `Ctrl+C` in the Terminal where it is running. When that occurs, the clusters performs some house-keeping: [Delaying allocation when a node leaves](https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html).
+
+:warning: **IMPORTANT**: 
+
+- This approach is only for development environments; in production, we need to perform further configurations.
+- **I have not achieved to perform all these steps on a Windows machine:** I was getting a certificate error when running `bin\elasticsearch-create-enrollment-token.bat --scope node`.
+
+I we don't add further nodes, we can continue, but the cluster and the shards/indices will be in "yellow" state, because they are not distributed across several nodes.
 
 ### Node Roles
 

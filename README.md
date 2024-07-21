@@ -31,7 +31,6 @@ Table of contents:
       - [Inverted Index](#inverted-index)
       - [B-Tree](#b-tree)
       - [Doc Values](#doc-values)
-      - [Putting it All Together](#putting-it-all-together)
     - [Sharding and Scalability](#sharding-and-scalability)
     - [Replication](#replication)
     - [Node Roles](#node-roles)
@@ -518,19 +517,92 @@ With that, we have a list of all the candidate documents. We can:
 - get a set of documents common to all terms
 - rank the set according to their importance thanks to the `TFIDF(t,d,D)`; the TFIDF is associated to each term-document, but we could compute an aggregate value for each query-document pair.
 
+See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
+
 #### B-Tree
 
+A B-tree is a self-balancing tree data structure that maintains sorted data and allows for efficient insertion, deletion, and search operations. It is commonly used in databases and file systems. Key features:
 
+- Balanced Tree Structure: Ensures that the tree remains balanced by maintaining a certain number of keys in each node. The balancing is automatic.
+- Multiple Children: Each node can have multiple children (more than two), which makes the tree shallower and operations faster.
+- Efficient Search: By dividing keys among nodes, B-trees allow for `log(n)` search time.
+- Disk Storage Friendly: Minimizes disk reads by maximizing the number of keys stored in each node, suitable for systems that read and write large blocks of data.
+- Scalability: Handles large amounts of data efficiently.
 
+Operations:
+
+- Search: Similar to binary search but generalized to multiple children.
+- Insertion: Adds elements in sorted order, splitting nodes as necessary.
+- Deletion: Removes elements while maintaining tree balance, merging nodes if needed.
+
+B-trees are often applied to numerical fields; for instance, let's consider these documents:
+
+```python
+[
+  { "id": 1, "name": "Product A", "price": 10, "date": "2023-01-01" },
+  { "id": 2, "name": "Product B", "price": 20, "date": "2023-01-05" },
+  { "id": 3, "name": "Product C", "price": 15, "date": "2023-02-01" },
+  { "id": 4, "name": "Product D", "price": 25, "date": "2023-02-03" },
+  { "id": 5, "name": "Product E", "price": 30, "date": "2023-02-05" }
+]
+```
+
+When documents are indexed, the price and date fields are stored using B-trees. This ensures that these fields are efficiently organized for range queries and sorting.
+
+The creation process could be the following:
+
+- Initial Insertion: Start with the root node. Insert the first document's price as the root.
+- Subsequent Insertions: Add each document's price in sorted order. If the current node has space (according to B-tree properties, which vary by B-tree degree), insert the new value. Otherwise, split the node and promote the middle value.
+- Balancing: Ensure the tree remains balanced. Splitting nodes and promoting middle values help maintain the B-tree properties, ensuring that no node has too many or too few children.
+
+In the previous list of Documents:
+
+    Insert Document 1:
+        Root: 10
+
+    Insert Document 2:
+        Root: 10
+        Child: 20
+
+    Insert Document 3:
+        Root: 10
+        Children: 15, 20
+
+    Insert Document 4:
+        Root: 15
+        Children: 10, 20, 25
+
+    Insert Document 5:
+        Root: 15
+        Children: 10, 20, 25, 30
+
+```
+       15
+      / | \
+    10 20  25
+            \
+            30
+```
+
+See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
 
 #### Doc Values
 
+Doc Values are columnar data of numerical fields. Columnar data is stored as an array, i.e., the values are contiguous in memory. That enables much faster operations in the entire field/column, such as sorting or aggregation operations, like average computation.
 
+I would implement the Doc Value structures with:
 
-#### Putting it All Together
+- An array which contains the document ids, i.e., an index.
+- An array which contains the values in a column/fields, ordered according to the id index.
+- A bitstring (an array of bits) used to mask whether to consider the array values or not.
 
+Then, if we want to compute the min/max, mean or similar values of a field/column:
 
+- We take the associated column/field array
+- Update the bitstring according to the previous search results (e.g., B-trees & inverted indices).
+- Run the column/field-wise operation with the masked array.
 
+See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
 
 ### Sharding and Scalability
 

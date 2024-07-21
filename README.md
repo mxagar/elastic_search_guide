@@ -6,8 +6,11 @@ I created most of the content in this `README.md` after following the course [Co
 
 My respository is structured as follows:
 
-- [`ml_search/`](./ml_search/)
-- [`notebooks/`](./notebooks/)
+- [`README.md`](./README.md): main guide.
+- [`notebooks/`](./notebooks/) contains notebooks with Python code about different related topics:
+  - ElasticSearch usage with Python
+  - Data structures used for search operations
+  - ...
 
 Mikel Sagardia, 2024.  
 No guarantees.

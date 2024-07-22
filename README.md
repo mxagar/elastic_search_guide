@@ -47,7 +47,9 @@ Table of contents:
     - [Updating Documents](#updating-documents)
     - [Scripted Updates](#scripted-updates)
     - [Upserts](#upserts)
-    - [Routing](#routing)
+    - [Routing Documents to Shards](#routing-documents-to-shards)
+    - [How Elasticsearch Reads and Writes Document Data](#how-elasticsearch-reads-and-writes-document-data)
+    - [Document Versioning and Optimistic Concurrency Control](#document-versioning-and-optimistic-concurrency-control)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
@@ -708,6 +710,8 @@ An index contains a single shard by default. If we need to create a new shard, w
 - the number of queries
 - ...
 
+Note: when we create an index, we define a number of primar shards and keep it fixed; i.e., we cannot change that number. The reason is that we use that number for routing. Routing consists in deciding which shard to pick to find a Document.
+
 Good rule of thumb: if we're going to have millions of documents, use a couple of shards. That number 5 was the default in the older versions.
 
 ### Replication and Snapshots
@@ -1035,7 +1039,88 @@ POST /products/_update/101
 }
 ```
 
-### Routing
+### Routing Documents to Shards
+
+In general we'll have
+
+- several nodes,
+- several indices,
+- and several shards per index, distributed acorss the nodes
+
+Howe does ElasticSearch know where (in which shard) to find the Documents we query?
+
+That is accomplished thanks to **Routing**. A default Routing strategy is fixed as `_routing` (hidden metadata in a Document) and it is used to obtain the Shard number of a Document given its ID by the formula:
+
+    shard_num = hash(_routing) & num_primary_shards
+
+Routing
+
+- enables automatically finding the shard number of a document
+- and uniformly distributes Documents in the index shards
+
+**But** it forces to create the shards of an index in the beginning and freeze them, otherwise the formula doesn't work. I we want to add a new shard later on, we need to create a new index and re-index all the Documents to it.
+
+It is possible to chage the default Routing strategy, too.
+
+![Routing](./assets/routing.png)
+
+### How Elasticsearch Reads and Writes Document Data
+
+In general, shards are organized in **Replica Groups**: several copies of a primary shard grouped together. Thus, Routing selectes the Replica Group rather than the shard, if we have properly set the Replica Groups.
+
+Then, if the request/query is **Read**-only operation, **Adaptive Replica Selection (ARS)** is performed, to pick among the shards in the Replica Group &mdash; however, note that the replica shards are fully functioning copies, so ARS is for load balancing purposes only. The selection is done with the goal of achieving the best performance.
+
+When the request/query involves **writing**, the operation is directed to the *primary shard* of the Replica Group:
+
+- The primary shards validates the request and field values.
+- Then, the operation is forwarded in parallel the replicas.
+
+![Write Operation](./assets/routing_write.png)
+
+Many things can go wrong in forwarding operations and synchronization of states in distributed systems, e.g., due to network delays or when a node fails. To ensure that all replica shards are consistent, ES uses **Primary Terms** and **Sequence Numbers**:
+
+- **Primary Term** (`_primary_term`) is the number of times a primary shard has been updated; this value is sent along with the forwarded operations. That way, errors can be detected.
+- **Sequence Numbers** (`_seq_no`) are operation counters: each operation has an increasing counter which is forwarded to the replicas. That way, we know the order of the operations.
+
+In addition, other sequence numbers are maintained within a Replica Group to speed up synchronization:
+
+- Local checkpoint: sequence number of each shard related to the las operation.
+- Global checkpoint: minimum sequene number among all replicas, i.e., last synchronization/alignment.
+
+### Document Versioning and Optimistic Concurrency Control
+
+By default, every time a Document is updated, `_version` increases a unit; however, only the last version of the Document is stored.
+
+We can also use *external* versioning, i.e., the version number is stored outside, e.g., in a relational DB.
+
+**However, it is not best practice to rely on `_version` anymore; instead, `_primary_term` and `_seq_no` should be used.**
+
+In other words, `_primary_term` and `_seq_no` are used to specify the correct version of the Document and synchronize operations in the ES distributed system. This is called **Optimistic Concurrency Control** and it prevents unwanted de-synchronized operations that might occur when requests associated to the same Document and field happen in parallel.
+
+Optimistic Concurrency Control is implemented by passing the reference `_primary_term` and `_seq_no` in the update request:
+
+- First, we get the values of the Document to update and fetch the current values of `_primary_term` and `_seq_no`.
+- Then we build an update query/request conditioning `_primary_term` and `_seq_no` to have the fetched reference values.
+
+If we have a multi-threaded application where multiple threads could modify the same value of a Document, we should use this approach!
+
+```
+# Get Document with ID 100
+# _primary_term and seq_no are in the metadata
+# We take them to formulate the conditioned update request
+GET /products/_doc/100
+
+# Update Document/product with ID 100 
+# if _primary_term == 1 and seq_no == 5 (reference values obtained in previous query)
+# If _primary_term and seq_no don't match, we get an error
+POST /products/_update/100?if_primary_term=1&if_seq_no=5
+{
+  "doc": {
+    "in_stock": 123
+  }
+}
+```
+
 
 
 

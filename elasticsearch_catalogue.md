@@ -157,4 +157,19 @@ POST /products/_update/101
     "in_stock": 5
   }
 }
+
+# Get Document with ID 100
+# _primary_term and seq_no are in the metadata
+# We take them to formulate the conditioned update request
+GET /products/_doc/100
+
+# Update Document/product with ID 100 
+# if _primary_term == 1 and seq_no == 5 (reference values obtained in previous query)
+# If _primary_term and seq_no don't match, we get an error
+POST /products/_update/100?if_primary_term=1&if_seq_no=5
+{
+  "doc": {
+    "in_stock": 123
+  }
+}
 ```

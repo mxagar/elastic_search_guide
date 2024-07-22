@@ -25,6 +25,7 @@ Contents:
 - Update documents: modify fields, add fields, scripts, upsert (insert or create)
 - Optimistic Concurrency Control: dealing with parallel updates
 - Update and Delete by Query: Update/Delete a filtered set of documents
+- Batch/Bulk processing
 
 ```
 ### --- Create and delete indices
@@ -228,4 +229,39 @@ POST /products/_delete_by_query
     "match_all": { }
   }
 }
+
+### --- Batch/Bulk processing
+
+# Create new Documents
+# We can list many (action, source) pairs
+# Always newline after a line, also in last JSON
+# Four actions: create, index, update, delete
+# Each action needs a source (the Document fields), except delete
+POST /_bulk
+{ "index": { "_index": "products", "_id": 200 } }
+{ "name": "Espresso Machine", "price": 199, "in_stock": 5 }
+{ "create": { "_index": "products", "_id": 201 } }
+{ "name": "Milk Frother", "price": 149, "in_stock": 14 }
+
+# Update Documents + Delete
+POST /_bulk
+{ "update": { "_index": "products", "_id": 201 } }
+{ "doc": { "price": 129 } }
+{ "delete": { "_index": "products", "_id": 200 } }
+
+# If all actions are for the same index,
+# we can specify it in the API commad
+POST /products/_bulk
+{ "update": { "_id": 201 } }
+{ "doc": { "price": 129 } }
+{ "delete": { "_id": 200 } }
+
+# Get all Documents in an index
+GET /products/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
 ```

@@ -11,7 +11,7 @@ My respository is structured as follows:
   - ElasticSearch usage with Python
   - Data structures used for search operations
   - ...
-- [`products-bulk.json`](./products-bulk.json): dummy data which contains 1000 products with their properties, used in the guide/course.
+- [`notebooks/products-bulk.json`](./notebooks/products-bulk.json): dummy data which contains 1000 products with their properties, used in the guide/course.
 
 Mikel Sagardia, 2024.  
 No guarantees.
@@ -52,7 +52,8 @@ Table of contents:
     - [How Elasticsearch Reads and Writes Document Data](#how-elasticsearch-reads-and-writes-document-data)
     - [Document Versioning and Optimistic Concurrency Control](#document-versioning-and-optimistic-concurrency-control)
     - [Update and Delete by Query](#update-and-delete-by-query)
-    - [Batch Processing](#batch-processing)
+    - [Batch or Bulk Processing](#batch-or-bulk-processing)
+      - [Bulk/Batch Processing with cURL](#bulkbatch-processing-with-curl)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
@@ -316,7 +317,7 @@ export ELASTIC_PASSWORD="..."
 
 # Example: Basic query to get general cluster info
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
-curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200 --noproxy localhost
 
 ```
 
@@ -460,18 +461,20 @@ export ELASTIC_PASSWORD="..."
 
 # Example: Basic query to get general cluster info
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
-curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200 --noproxy localhost
 
 # Example: Get the index products (not created yet)
-curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET -H "Content-Type: application/json" -d '{ \"query\": { \"match_all\": {} } }' https://localhost:9200/products/_search
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET -H "Content-Type: application/json" -d '{ \"query\": { \"match_all\": {} } }' https://localhost:9200/products/_search --noproxy localhost
 # Bash: -d '{ "query": { "match_all": {} } }'
 
 # Example: GET /_cat/nodes?v -> get all nodes
-curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/nodes?v"
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/nodes?v" --noproxy localhost
 
 # Example: GET /_cat/indices?v -> list all indices
-curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/indices?v"
+curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/indices?v" --noproxy localhost
 ```
+
+See also [Bulk/Batch Processing with cURL](#bulkbatch-processing-with-curl).
 
 Besides using `cURL`, we can also connect to Elastic Search using Python. The notebook [`notebooks/elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb) shows how to do that via `requests` and the package `elasticsearch`:
 
@@ -1178,9 +1181,147 @@ POST /products/_delete_by_query
 }
 ```
 
-### Batch Processing
+### Batch or Bulk Processing
 
-We can use a **Bulk API** to process multiple Documents.
+We can use the **Bulk API** (`_bulk`) to process multiple Documents in batch.
+
+The syntax for that is `NDJSON`, a modified `JSON` specification:
+
+```ndjson
+<JSON with action + metadata>\n
+<OPTIONAL: source or doc fields>\n
+<JSON with action + metadata>\n
+<OPTIONAL: source or doc fields>\n
+...
+```
+
+For example, the following bulk request indexes 2 Documents:
+
+```json
+POST /_bulk
+{ "index": { "_index": "products", "_id": 200 } }             # action + metadata
+{ "name": "Espresso Machine", "price": 199, "in_stock": 5 }   # source
+{ "create": { "_index": "products", "_id": 201 } }            # action + metadata
+{ "name": "Milk Frother", "price": 149, "in_stock": 14 }      # source
+```
+
+The `_bulk` API with the `NDJSON` specification has these properties:
+
+- We can choose from 4 **actions**: `index, create, update, delete`; these are specified as a key in a `JSON` object. Difference between `index` and `create`:
+  - `index`: always runs, even if the Document exists.
+  - `create`: it fails if the Document exists.
+- All actions except `delete` require a second line with the source document, also a `JSON` action.
+- We can feed many actions in a `JSON` file.
+- Each line must end with a return (`\n`), even the last one, i.e., we need to have a blank line at the end.
+- If a single action fails, the processing **is not** stopped, but it continues.
+- If all actions are for the same index, we can specify it in the API commad: `/_bulk/products`.
+- If we are using `cURL` or HTTP requests, the header `Content-Type` should be `Content-Type: application/x-ndjson`.
+- It is much more efficient to use the `_bulk` API if we have many requests, because we significantly minimize the traffic (round-trips are avoided).
+- To avoid concurrency issues, we can still use `if_primary_term` and `if_seq_no` in the action metadata.
+
+More examples:
+
+```
+# Create new Documents
+# We can list many (action, source) pairs
+# Always newline after a line, also in last JSON
+# Four actions: create, index, update, delete
+# Each action needs a source (the Document fields), except delete
+POST /_bulk
+{ "index": { "_index": "products", "_id": 200 } }
+{ "name": "Espresso Machine", "price": 199, "in_stock": 5 }
+{ "create": { "_index": "products", "_id": 201 } }
+{ "name": "Milk Frother", "price": 149, "in_stock": 14 }
+
+# Update Documents + Delete
+POST /_bulk
+{ "update": { "_index": "products", "_id": 201 } }
+{ "doc": { "price": 129 } }
+{ "delete": { "_index": "products", "_id": 200 } }
+
+# If all actions are for the same index,
+# we can specify it in the API commad
+POST /products/_bulk
+{ "update": { "_id": 201 } }
+{ "doc": { "price": 129 } }
+{ "delete": { "_id": 200 } }
+
+# Get all Documents in an index
+GET /products/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+```
+
+#### Bulk/Batch Processing with cURL
+
+`cURL` commands to ingest [`products-bulk.json`](./products-bulk.json) with and without certificate:
+
+```bash
+# Set variables in Powershell for easier and more secure use.
+# To use them: $Env:ELASTIC_USER
+$Env:ELASTIC_USER = "elastic"
+$Env:ELASTIC_PASSWORD = "..."
+$Env:ELASTIC_HOME = "..."
+# Bash. To use them: $ELASTIC_USER
+export ELASTIC_USER="elastic"
+export ELASTIC_PASSWORD="..."
+export ELASTIC_HOME="..."
+
+# Without CA certificate validation.
+# This is fine for development clusters, but don't do this in production!
+# "@products-bulk.json" means we ingest a file, not a path
+curl --insecure -u $ELASTIC_USER:$ELASIC_PASSWORD -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json"
+# Windows
+curl.exe --insecure -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json"  --noproxy localhost
+
+# With CA certificate validation. 
+# The certificate is located at $ELASTIC_HOME/config/certs/http_ca.crt
+# "@products-bulk.json" means we ingest a file, not a path
+curl --cacert $ELASTIC_HOME/config/certs/http_ca.crt -u $ELASTIC_USER:$ELASIC_PASSWORD -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json"
+# Windows
+curl.exe --cacert "$($Env:ELASTIC_HOME)\config\certs\http_ca.crt" -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json" --noproxy localhost
+```
+
+The equivalent using Python, as shown in [`notebooks/elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb):
+
+```python
+import os
+import requests
+from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
+load_dotenv()
+
+elastic_user = os.getenv("ELASTIC_USER")
+elastic_password = os.getenv("ELASIC_PASSWORD")
+elastic_home = os.getenv("ELASTIC_HOME")
+
+# Verify that the environment variables are correctly set
+if not all([elastic_user, elastic_password, elastic_home]):
+    raise ValueError("One or more environment variables are not set")
+
+# Define the URL
+url = "https://localhost:9200/products/_bulk"
+
+# Read the data from the file
+with open("products-bulk.json", "rb") as data_file:
+    data = data_file.read()
+
+# Make the POST request
+response = requests.post(
+    url,
+    auth=HTTPBasicAuth(elastic_user, elastic_password),
+    headers={"Content-Type": "application/x-ndjson"},
+    data=data,
+    verify=os.path.join(elastic_home, "config", "certs", "http_ca.crt"),
+    proxies={"http": None, "https": None}  # Bypass proxy
+)
+
+# Print the response
+print(response.text) # {"errors":false,"took":155,"items":[{"index":{"_index":"products","_id":"...
+```
 
 ## Mapping & Analysis
 

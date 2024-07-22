@@ -18,7 +18,17 @@ GET /_cat/shards?v
 
 ## Manage Documents
 
+Contents:
+
+- Create and delete indices
+- Create/Index, delete and get documents
+- Update documents: modify fields, add fields, scripts, upsert (insert or create)
+- Optimistic Concurrency Control: dealing with parallel updates
+- Update and Delete by Query: Update/Delete a filtered set of documents
+
 ```
+### --- Create and delete indices
+
 # Create an index
 PUT /pages
 
@@ -32,6 +42,8 @@ PUT /products
     "number_of_shards": 2
   }
 }
+
+### --- Create/Index, delete and get documents
 
 # Simple JSON Document indexed = created
 # An _id is automatically assigned if not provided
@@ -61,6 +73,18 @@ DELETE /products/_doc/100
 
 # Retrieve Document by ID
 GET /products/_doc/100
+
+# Get all Documents in the index products
+# The result is a JSON in which result['hits']['hits']
+# contains a list of al Document JSONs
+GET /products/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+### --- Update documents: modify fields, add fields, scripts, upsert (insert or create)
 
 # Update an existing field
 # To update a Document, 
@@ -158,6 +182,8 @@ POST /products/_update/101
   }
 }
 
+### --- Optimistic Concurrency Control: dealing with parallel updates
+
 # Get Document with ID 100
 # _primary_term and seq_no are in the metadata
 # We take them to formulate the conditioned update request
@@ -170,6 +196,36 @@ POST /products/_update/100?if_primary_term=1&if_seq_no=5
 {
   "doc": {
     "in_stock": 123
+  }
+}
+
+### --- Update and Delete by Query: Update/Delete a filtered set of documents
+
+# Update a set of filtered Documents: _update_by_query
+# Write the update in "script"
+# Write the filterin "query"
+# Errors/conflicts can occur; by default the request is aborted
+# but we can specify to proceed if we want
+POST /products/_update_by_query
+{
+  "conflicts": "proceed",
+  "script": {
+    "source": "ctx._source.in_stock--"
+  },
+  "query": {
+    "match_all": {}
+  }
+}
+
+# Delete all Documents that match the query
+# in this case ALL DOCUMENTS!
+# If errors/conflicts occur, the request is aborted
+# unless we specify "conflicts": "proceed"
+POST /products/_delete_by_query
+{
+  "conflicts": "proceed",
+  "query": {
+    "match_all": { }
   }
 }
 ```

@@ -11,6 +11,7 @@ My respository is structured as follows:
   - ElasticSearch usage with Python
   - Data structures used for search operations
   - ...
+- [`products-bulk.json`](./products-bulk.json): dummy data which contains 1000 products with their properties, used in the guide/course.
 
 Mikel Sagardia, 2024.  
 No guarantees.
@@ -50,6 +51,8 @@ Table of contents:
     - [Routing Documents to Shards](#routing-documents-to-shards)
     - [How Elasticsearch Reads and Writes Document Data](#how-elasticsearch-reads-and-writes-document-data)
     - [Document Versioning and Optimistic Concurrency Control](#document-versioning-and-optimistic-concurrency-control)
+    - [Update and Delete by Query](#update-and-delete-by-query)
+    - [Batch Processing](#batch-processing)
   - [Mapping \& Analysis](#mapping--analysis)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
@@ -856,6 +859,16 @@ PUT /products/_doc/100
 
 # Delete the document with ID 100
 DELETE /products/_doc/100
+
+# Get all Documents in the index products
+# The result is a JSON in which result['hits']['hits']
+# contains a list of al Document JSONs
+GET /products/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
 ```
 
 ### Retrieving Documents by ID
@@ -1121,8 +1134,53 @@ POST /products/_update/100?if_primary_term=1&if_seq_no=5
 }
 ```
 
+### Update and Delete by Query
 
+We can perform operations similar to the SQL `UPDATE WHERE` with the API `_update_by_query`.
+To that end
 
+- we write a `script` with the update we'd like
+- we add a `query` field which filters the Documents we'd like to update; if we want all, we use `"match_all"`.
+
+Note that this kind of filtered update might lead to errors/conflicts; if one error occurs, the request is aborted by default, but we can specify to proceed upon conflicts, too.
+
+```
+# Update a set of filtered Documents: _update_by_query
+# Write the update in "script"
+# Write the filterin "query"
+# Errors/conflicts can occur; by default the request is aborted
+# but we can specify to proceed if we want
+POST /products/_update_by_query
+{
+  "conflicts": "proceed",
+  "script": {
+    "source": "ctx._source.in_stock--"
+  },
+  "query": {
+    "match_all": {}
+  }
+}
+```
+
+Similarly, we can `_delete_by_query`:
+
+```
+# Delete all Documents that match the query
+# in this case ALL DOCUMENTS!
+# If errors/conflicts occur, the request is aborted
+# unless we specify "conflicts": "proceed"
+POST /products/_delete_by_query
+{
+  "conflicts": "proceed",
+  "query": {
+    "match_all": { }
+  }
+}
+```
+
+### Batch Processing
+
+We can use a **Bulk API** to process multiple Documents.
 
 ## Mapping & Analysis
 

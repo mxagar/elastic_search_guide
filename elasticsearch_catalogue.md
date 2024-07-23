@@ -10,6 +10,7 @@ Table of contents:
   - [Basic](#basic)
   - [Manage Documents](#manage-documents)
   - [Analyzers](#analyzers)
+  - [Mappings](#mappings)
 
 
 ## Basic
@@ -91,6 +92,14 @@ GET /products/_search
   "query": {
     "match_all": {}
   }
+}
+
+# If the index was not created and we index
+# a Document, the index will be created automatically
+# and the Document added to it
+PUT /products_test/_doc/1
+{
+  "price": 7.4
 }
 
 ### --- Update documents: modify fields, add fields, scripts, upsert (insert or create)
@@ -276,12 +285,6 @@ GET /products/_search
 
 ## Analyzers
 
-Contents:
-
-- A
-- B
-- ...
-
 ```
 # Here a text string is analyzed
 # with the standard analyzer:
@@ -302,4 +305,77 @@ POST /_analyze
   "tokenizer": "standard",
   "filter": ["lowercase"]
 }
+```
+
+## Mappings
+
+Contents:
+
+- Adding explicit mappings
+- Retrieving mappings
+
+```
+### --- Adding explicit mappings
+
+# We create a mapping for the index reviews
+# For simple types, we define their type key-value
+# For object types, we need to nest a properties key again
+PUT /reviews
+{
+  "mappings": {
+    "properties": {
+      "rating": { "type": "float" },
+      "content": { "type": "text" },
+      "product_id": { "type": "integer" },
+      "author": {
+        "properties": {
+          "first_name": { "type": "text" },
+          "last_name": { "type": "text" },
+          "email": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}
+
+# Now we index the first Document
+PUT /reviews/_doc/1
+{
+  "rating": 5.0,
+  "content": "Outstanding course! Bo really taught me a lot about Elasticsearch!",
+  "product_id": 123,
+  "author": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "johndoe123@example.com"
+  }
+}
+
+# Objects can be defined flattened
+# by using object_name.field_name keys 
+PUT /reviews_dot_notation
+{
+  "mappings": {
+    "properties": {
+      "rating": { "type": "float" },
+      "content": { "type": "text" },
+      "product_id": { "type": "integer" },
+      "author.first_name": { "type": "text" },
+      "author.last_name": { "type": "text" },
+      "author.email": { "type": "keyword" }
+    }
+  }
+}
+
+### --- Retrieving mappings
+
+# Retrieving mappings for the `reviews` index
+GET /reviews/_mapping
+
+# Retrieving mapping for the `content` field
+GET /reviews/_mapping/field/content
+
+# Retrieving mapping for the `author.email` field
+# using dot-notation
+GET /reviews/_mapping/field/author.email
 ```

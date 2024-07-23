@@ -35,6 +35,7 @@ Table of contents:
     - [Building an Index](#building-an-index)
       - [Inverted Index](#inverted-index)
       - [B-Tree](#b-tree)
+      - [BKD Tree, Block KD-tree](#bkd-tree-block-kd-tree)
       - [Doc Values](#doc-values)
     - [Sharding and Scalability](#sharding-and-scalability)
     - [Replication and Snapshots](#replication-and-snapshots)
@@ -55,6 +56,9 @@ Table of contents:
     - [Batch or Bulk Processing](#batch-or-bulk-processing)
       - [Bulk/Batch Processing with cURL](#bulkbatch-processing-with-curl)
   - [Mapping \& Analysis](#mapping--analysis)
+    - [Introduction to Analysis](#introduction-to-analysis)
+    - [Using the Analysis API](#using-the-analysis-api)
+    - [Understanding Inverted Indices](#understanding-inverted-indices)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -560,7 +564,8 @@ On one side, we store our Documents, probably as files.
 On the other side we build the following structures:
 
 - An **inverted index** which maps terms with documents and frequencies.
-- A **B-tree**, which allows fast search and filtering of given (often data/numeric) fields.
+- A **B-tree**, which allows fast search and filtering of given (often data/numeric) single-dimensional fields.
+- A **BKD-tree**, a variant of the k-d tree (k-dimensional tree) optimized for indexing multi-dimensional data.
 - **Doc Values** or fields in **Column Format**, which allow faster sorting and aggregation operations.
 
 In the following, I explain my intuitions of each of them.
@@ -571,7 +576,7 @@ An inverted index is a table which maps terms with document ids, positions and f
 
 An inverted index can be built as follows:
 
-- Each new document is processed by tokenizing (& stemming) is text.
+- Each new document is processed by tokenizing (& stemming) its text.
 - For each term/token an entry is created and maintained, which contains:
   - List of document ids where the term/token appears.
   - Positions in the document where the term/token appears: field, character position, etc.
@@ -601,6 +606,8 @@ With that, we have a list of all the candidate documents. We can:
 - rank the set according to their importance thanks to the `TFIDF(t,d,D)`; the TFIDF is associated to each term-document, but we could compute an aggregate value for each query-document pair.
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
+
+![Inverted Index](./assets/inverted_index.png)
 
 #### B-Tree
 
@@ -668,6 +675,25 @@ In the previous list of Documents:
 ```
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
+
+#### BKD Tree, Block KD-tree
+
+A BKD tree (Block KD-tree) is a variant of the k-d tree (k-dimensional tree) optimized for indexing multi-dimensional data. It is particularly used in systems like Elasticsearch and Apache Lucene for efficient range searches and nearest neighbor queries in high-dimensional spaces.
+
+Key Characteristics:
+
+- Multi-Dimensional Indexing: Designed to handle multi-dimensional data, making it suitable for spatial and temporal indexing. The B-tree is primarily for single-dimensional data.
+- Block-Based: Organizes data into blocks, improving performance for large datasets by reducing the number of I/O operations.
+- Efficient Range Queries: Optimized for range queries across multiple dimensions.
+- Space-Partitioning: Partitions the space into hyper-rectangles, recursively subdividing it into smaller regions.
+
+Use Cases:
+
+- Geospatial Data: Indexing and querying geographical locations.
+- Time-Series Data: Managing data points that have multiple attributes, such as timestamp, location, and other dimensions.
+- Full-Text Search: Used in search engines like Elasticsearch for indexing and querying multi-dimensional data such as text, numerical data, and more.
+
+See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation of a KD-tree and comparison to brute-force nearest vector search with numpy.
 
 #### Doc Values
 
@@ -1325,9 +1351,155 @@ print(response.text) # {"errors":false,"took":155,"items":[{"index":{"_index":"p
 
 ## Mapping & Analysis
 
-TBD.
+### Introduction to Analysis
 
-:construction:
+When we index a Document, it is **analyzed**. **Analysis** is referred to as **text analysis**. ES performs an analysis of the text/sources, such that the content in `_source` is not really used during the search, but the analyzed/processed text. An analyzer has 3 building blocks:
+
+- Character filters (`char_filter`): original text is processed by adding/removing characters. Examples:
+  - `html_strip`: remove HTML characters
+- Tokenizer (`tokenizer`): we have one tokenizer, which splits the text into tokens; they can modifiy/remove punctuation symbols.
+- Token filters (`filter`): tokens can be modified, e.g., 
+  - `lowercase`: all tokens are expressed in lower case.
+
+The result of the analyzers is stored in a searchable data structure.
+
+![Text Analysis](./assets/text_analysis.png)
+
+ES ships with built-in analyzers and we can combine them as we please. The standard analyzer:
+
+- has no character filter,
+- tokenizes with the `standard` tokenizer by breaking the text into words,
+- has the `lowercase` token filter.
+
+![Standard Analyzer](./assets/standard_analyzer.png)
+
+### Using the Analysis API
+
+We can run the analyzers in our text with the `_analyze` API: 
+
+```
+# Here a text string is analyzed
+# with the standard analyzer:
+# no char filter, standard tokenizer, lowercase token filter
+POST /_analyze
+{
+  "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
+  "analyzer": "standard"
+}
+```
+
+The output is
+
+```json
+{
+  "tokens": [
+    {
+      "token": "2",
+      "start_offset": 0,
+      "end_offset": 1,
+      "type": "<NUM>",
+      "position": 0
+    },
+    {
+      "token": "guys",
+      "start_offset": 2,
+      "end_offset": 6,
+      "type": "<ALPHANUM>",
+      "position": 1
+    },
+    {
+      "token": "walk",
+      "start_offset": 7,
+      "end_offset": 11,
+      "type": "<ALPHANUM>",
+      "position": 2
+    },
+    {
+      "token": "into",
+      "start_offset": 12,
+      "end_offset": 16,
+      "type": "<ALPHANUM>",
+      "position": 3
+    },
+    {
+      "token": "a",
+      "start_offset": 19,
+      "end_offset": 20,
+      "type": "<ALPHANUM>",
+      "position": 4
+    },
+    {
+      "token": "bar",
+      "start_offset": 21,
+      "end_offset": 24,
+      "type": "<ALPHANUM>",
+      "position": 5
+    },
+    {
+      "token": "but",
+      "start_offset": 26,
+      "end_offset": 29,
+      "type": "<ALPHANUM>",
+      "position": 6
+    },
+    {
+      "token": "the",
+      "start_offset": 30,
+      "end_offset": 33,
+      "type": "<ALPHANUM>",
+      "position": 7
+    },
+    {
+      "token": "third",
+      "start_offset": 34,
+      "end_offset": 39,
+      "type": "<ALPHANUM>",
+      "position": 8
+    },
+    {
+      "token": "ducks",
+      "start_offset": 43,
+      "end_offset": 48,
+      "type": "<ALPHANUM>",
+      "position": 9
+    }
+  ]
+}
+```
+
+The tokens have:
+
+- the `token` expression
+- the character start and end offsets
+- the `type`: `<NUM>`, `<ALPHANUM>`
+- the `position`
+
+Note that punctuation is removed by the `standard` tokenizer/analyzer (also smilies); that's because they don't improve the search.
+
+We can also explicitly define the components of the analyzer:
+
+```
+# Analyzer components explicitly defined:
+# character filer, tokenizer, token filters
+# This call produces the same results are before
+POST /_analyze
+{
+  "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
+  "char_filter": [],
+  "tokenizer": "standard",
+  "filter": ["lowercase"]
+}
+```
+
+### Understanding Inverted Indices
+
+See the section [Inverted Index](#inverted-index).
+
+In ES, inverted indices are:
+
+- stored in Apache Lucene, which is used for search purposes
+- created for each text field.
+
 
 ## Searching for Data
 

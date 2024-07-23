@@ -43,6 +43,7 @@ Notebook: [`search_data_structures.ipynb`](search_data_structures.ipynb):
 - B-Trees for range searches of numerical and date values-
 - Inverted Index for searching relevant documents based on text.
 - Doc Values (Columnar data representatios) for fast field/column-wise aggregation operations. 
+- KD-Trees for nearest neighbor searches with low-dimensional vectors.
 
 For more contenxt, see [../README.md](../README.md) - **Building and Index**.
 

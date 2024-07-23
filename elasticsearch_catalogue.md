@@ -4,6 +4,14 @@ This document compiles the most important commands of Elastic Search.
 
 For a more detailed guide on Elastic Search, check [`README.md`](./README.md).
 
+Table of contents:
+
+- [Elastic Search: Command Catalogue](#elastic-search-command-catalogue)
+  - [Basic](#basic)
+  - [Manage Documents](#manage-documents)
+  - [Analyzers](#analyzers)
+
+
 ## Basic
 
 ```
@@ -263,5 +271,17 @@ GET /products/_search
     "match_all": {}
   }
 }
+
+```
+
+## Analyzers
+
+Contents:
+
+- A
+- B
+- ...
+
+```
 
 ```

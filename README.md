@@ -66,6 +66,10 @@ Table of contents:
     - [Introduction to Mapping](#introduction-to-mapping)
     - [Data Types](#data-types)
     - [Type Coercion](#type-coercion)
+    - [Arrays](#arrays)
+    - [Adding Explicit Mappings and Retrieving](#adding-explicit-mappings-and-retrieving)
+      - [Dot Notation](#dot-notation)
+      - [Retrieving Mappings](#retrieving-mappings)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -905,6 +909,14 @@ GET /products/_search
     "match_all": {}
   }
 }
+
+# If the index was not created and we index
+# a Document, the index will be created automatically
+# and the Document added to it
+PUT /products_test/_doc/1
+{
+  "price": 7.4
+}
 ```
 
 ### Retrieving Documents by ID
@@ -1571,6 +1583,169 @@ Full-text searches are performed in `text` fields, and the query text doesn't ne
 
 ### Type Coercion
 
+When we index the first document to an index which was not created yet, the mappings (i.e., the schema, field-type pairs) are dynamically created.
+
+Then, when we index the following documents, by default, the field values will be parsed as the types defined in the mapping; that means the values will be casted/coerced. In some cases it works, but in others it doesn't; for instance, if our type is `float`:
+
+- Works: "1.0" (text) -> 1.0 (float)
+- Does not work: "1.0m" -> cannot be parsed...
+
+One important point is that the real values used during search are not the ones in `_source`, but in the Apache Lucene index. Thus, we might see *uncoerced* non-homogeneous values in `_source`.
+
+Type coercion can be disabled.
+
+```
+# The index coercion_test does not exist
+# but it is created and Document 1 added
+# The first time, the type is inferred: float
+PUT /coercion_test/_doc/1
+{
+  "price": 7.4
+}
+
+# The next Document contains a string number
+# The type was inferred as float,
+# so ES will try to cast/convert the value,
+# this is called Type Coercion
+# This time it works!
+# HOWEVER: in _source we'll see a string
+# the casted float is in Apache Lucene...
+PUT /coercion_test/_doc/2
+{
+  "price": "7.4"
+}
+
+# This time, the type conversion cannot work
+# We get an ERROR
+PUT /coercion_test/_doc/3
+{
+  "price": "7.4m"
+}
+
+GET /coercion_test/_doc/2
+
+DELETE /coercion_test
+```
+
+### Arrays
+
+There are no `array` types because every type can be an `array`!
+
+Internally, text arrays are concatenated, e.g.:
+
+    ["Smartphone", "Computer"] -> "Smartphone Computer"
+
+In the case of non-text fields, fields are not analyzed/processed, and they are stored as arrays in the appropriate data structures within Apache Lucene.
+
+One constraint: 
+
+- either all the values must be of the same type
+- or all the values in an array should be coerceable to the type defined in their mapping.
+
+Also, note that arrays can contain nested arrays; in that case, they are flattened:
+
+    [1, [2, 3]] -> [1, 2, 3]
+
+Finally, **arrays of objects need to be of type `nested` if we want to query the objects independently, as explained.**
+
+### Adding Explicit Mappings and Retrieving
+
+In this section, a mapping is created, i.e., the equivalent of a table schema. The syntax is very simple, we defined fields with their types inside `mappings.properties` and if we have an object, we nest `properties` within it:
+
+```json
+{
+  "mappings": {
+    "properties": {
+      "field_1": { "type": "float" },
+      "field_2": { "type": "text" },
+      "field_2": {
+        "properties": {
+          ...
+        }
+      }
+    }
+  }
+}
+```
+
+Example:
+
+```
+# We create a mapping for the index reviews
+# For simple types, we define their type key-value
+# For object types, we need to nest a properties key again
+PUT /reviews
+{
+  "mappings": {
+    "properties": {
+      "rating": { "type": "float" },
+      "content": { "type": "text" },
+      "product_id": { "type": "integer" },
+      "author": {
+        "properties": {
+          "first_name": { "type": "text" },
+          "last_name": { "type": "text" },
+          "email": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}
+
+# Now we index the first Document
+PUT /reviews/_doc/1
+{
+  "rating": 5.0,
+  "content": "Outstanding course! Bo really taught me a lot about Elasticsearch!",
+  "product_id": 123,
+  "author": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "johndoe123@example.com"
+  }
+}
+```
+
+#### Dot Notation
+
+Another way of adding an object is to use the *dot-notation*, which consists in defining object fields flattened by using `object_name.field_name` keys:
+
+```
+# Objects can be defined flattened
+# by using object_name.field_name keys 
+PUT /reviews_dot_notation
+{
+  "mappings": {
+    "properties": {
+      "rating": { "type": "float" },
+      "content": { "type": "text" },
+      "product_id": { "type": "integer" },
+      "author.first_name": { "type": "text" },
+      "author.last_name": { "type": "text" },
+      "author.email": { "type": "keyword" }
+    }
+  }
+}
+
+DELETE /reviews_dot_notation
+```
+
+This format is probably a bit easier.
+This *dot-notation* is not exclusive to creating the mappings, it can be used any time!
+
+#### Retrieving Mappings
+
+```
+# Retrieving mappings for the `reviews` index
+GET /reviews/_mapping
+
+# Retrieving mapping for the `content` field
+GET /reviews/_mapping/field/content
+
+# Retrieving mapping for the `author.email` field
+# using dot-notation
+GET /reviews/_mapping/field/author.email
+```
 
 
 

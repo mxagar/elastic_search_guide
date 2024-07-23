@@ -65,6 +65,7 @@ Table of contents:
     - [Understanding Inverted Indices](#understanding-inverted-indices)
     - [Introduction to Mapping](#introduction-to-mapping)
     - [Data Types](#data-types)
+    - [Type Coercion](#type-coercion)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -1559,9 +1560,17 @@ To solve the issue of the lists of objects, an extra type exists: `nested`. When
 
 ![Nested type](./assets/nested_type.png)
 
-The type `keyword` is another interesting one: it's like a tag which can be used to exact-matching documents, i.e., for filtering. For instance: we might want to search all articles with status `PUBLISHED`.
+The type `keyword` is another interesting one: it's like a tag which can be used to exact-matching documents, i.e., for filtering. The `keyword` fields are put into the inverted indices, but they are analyzed with the `keyword` analyzer, which is a no-op analyzer: it outputs the unmodified string (even if it consists of a long text with thousands of words) as a single token. The goal with a keyword is to be able to find exactly its content. Some use-cases:
+
+- Emails (eventhough we might want to lowercase them)
+- Flags. For instance: we might want to search all articles with status `PUBLISHED`.
+
+Then, `keyword` fields can be used for fast filtering which are the previous necessary step for aggregation and summarization operations.
 
 Full-text searches are performed in `text` fields, and the query text doesn't need to match exactly the indexed text.
+
+### Type Coercion
+
 
 
 

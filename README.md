@@ -1567,7 +1567,7 @@ The type `keyword` is another interesting one: it's like a tag which can be used
 
 Then, `keyword` fields can be used for fast filtering which are the previous necessary step for aggregation and summarization operations.
 
-Full-text searches are performed in `text` fields, and the query text doesn't need to match exactly the indexed text.
+Full-text searches are performed in `text` fields, and the query text doesn't need to match exactly the indexed text. The fields with `text` are ingested into inverted indices; each field has an inverted index.
 
 ### Type Coercion
 

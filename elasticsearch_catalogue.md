@@ -283,5 +283,23 @@ Contents:
 - ...
 
 ```
+# Here a text string is analyzed
+# with the standard analyzer:
+# no char filter, standard tokenizer, lowercase token filter
+POST /_analyze
+{
+  "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
+  "analyzer": "standard"
+}
 
+# Analyzer components explicitly defined:
+# character filer, tokenizer, token filters
+# This call produces the same results are before
+POST /_analyze
+{
+  "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
+  "char_filter": [],
+  "tokenizer": "standard",
+  "filter": ["lowercase"]
+}
 ```

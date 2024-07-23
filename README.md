@@ -2,7 +2,7 @@
 
 This are my notes on **ElasticSearch** and **search methods** with focus on Machine Learning.
 
-I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide), but extended it mainly consulting the official Elastic documentation. The couser by Bo Andersen has a Github repository with a summary of all the commands used: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
+I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide), but extended it mainly consulting the official Elastic documentation and other sources that deal with data structures for search operations. The couser by Bo Andersen has a Github repository with a summary of all the commands used: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
 
 My respository is structured as follows:
 
@@ -10,6 +10,10 @@ My respository is structured as follows:
 - [`notebooks/`](./notebooks/) contains notebooks with Python code about different related topics:
   - ElasticSearch usage with Python
   - Data structures used for search operations
+    - Inverted indices
+    - Doc Values
+    - KD-Trees
+    - etc.
   - ...
 - [`notebooks/products-bulk.json`](./notebooks/products-bulk.json): dummy data which contains 1000 products with their properties, used in the guide/course.
 
@@ -59,6 +63,8 @@ Table of contents:
     - [Introduction to Analysis](#introduction-to-analysis)
     - [Using the Analysis API](#using-the-analysis-api)
     - [Understanding Inverted Indices](#understanding-inverted-indices)
+    - [Introduction to Mapping](#introduction-to-mapping)
+    - [Data Types](#data-types)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -1499,6 +1505,64 @@ In ES, inverted indices are:
 
 - stored in Apache Lucene, which is used for search purposes
 - created for each text field.
+
+However, not only inverted indices are used for search; inverted indices are primarily for text data, for other types, some other data structures and algorithms are used:
+
+- B-Trees and BKD Trees for numeric data.
+- Doc Values for aggregation operations.
+
+### Introduction to Mapping
+
+A mapping is the definition of the structure of a Document, i.e., **fields and types**; it is equivalent to a table schema in a relational DB.
+
+![Mapping](./assets/mapping.png)
+
+Mappings can be:
+
+- Explicit: we define them ourselves.
+- Implicit: ES generates mappings when we index Documents using our inputs.
+
+### Data Types
+
+There are many [field data types](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html). 
+
+Some basic types:
+
+- boolean
+- integer
+- short
+- long
+- float
+- double
+- date
+
+Some other types specific to ES:
+
+- object
+- nested
+- keyword
+- text
+
+An `object` is a  `JSON` dictionary; each Document is an `object`, and they can contain `objects` in one of their fields (so they can be nested). However, the type is not set to `object` in the mapping, but a new dictionary is opened with a nested dictionary called `properties`, which contains the fields of the object.
+
+![Object Type](./assets/object_type.png)
+
+Internally, `objects` are flattened to be saved in Apache Lucene.
+
+![Object Flattening](./assets/object_flattening.png)
+
+Lists of objects are decomposed into lists of fields in the flattened objects, which can be an issue when we search, because the concatenation of conditions with `AND` becomes an `OR` concatenation.
+
+![Object Flattening with Lists](./assets/object_flattening_2.png)
+
+To solve the issue of the lists of objects, an extra type exists: `nested`. When we define a `nested` type, we are defining a list of objects which can deal with the aforementioned `AND-OR` situation; that's because the objects are stored independently, as independent Documents.
+
+![Nested type](./assets/nested_type.png)
+
+The type `keyword` is another interesting one: it's like a tag which can be used to exact-matching documents, i.e., for filtering. For instance: we might want to search all articles with status `PUBLISHED`.
+
+Full-text searches are performed in `text` fields, and the query text doesn't need to match exactly the indexed text.
+
 
 
 ## Searching for Data

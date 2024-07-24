@@ -70,6 +70,10 @@ Table of contents:
     - [Adding Explicit Mappings and Retrieving](#adding-explicit-mappings-and-retrieving)
       - [Dot Notation](#dot-notation)
       - [Retrieving Mappings](#retrieving-mappings)
+    - [Adding/Extending Mappings to Existing Indices: Adding New Fields](#addingextending-mappings-to-existing-indices-adding-new-fields)
+    - [Date Type](#date-type)
+    - [Missing Fields](#missing-fields)
+    - [Overview of Mapping Parameters](#overview-of-mapping-parameters)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -1746,6 +1750,127 @@ GET /reviews/_mapping/field/content
 # using dot-notation
 GET /reviews/_mapping/field/author.email
 ```
+
+### Adding/Extending Mappings to Existing Indices: Adding New Fields
+
+Case: We already have an Index and we'd like to add a field to it. We can do that with the `_mapping` API, by simply adding the field in the `properties`.
+
+```
+# Here, we have an Index reviews
+# and we add a new field to it: 
+# "created_at": { "type": "date" }
+PUT /reviews/_mapping
+{
+  "properties": {
+    "created_at": {
+      "type": "date"
+    }
+  }
+}
+
+GET /reviews/_mapping
+```
+
+### Date Type
+
+Dates can be specified as:
+
+- Specially formatted strings:
+  - a date *without* time
+  - a date *with* time
+- Milliseconds since epoch (long) - Epoch: 1970-01-01
+
+However, any date will be internally parsed and formatted and stored as *milliseconds since epoch (long)*, also for dates in queries.
+
+**Don't provide UNIX timestamps (seconds since epoch), since they will be parsed as milliseconds since epoch!**
+
+Standard formats must be used for the strings:
+
+- [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601): `yyyy-mm-ddThh:mm:ss`.
+- [UTC timezones](https://en.wikipedia.org/wiki/UTC_offset): either we append `Z` to the date string (Greenwich) or the offset `+hh:mm`.
+
+Examples:
+
+```
+# Supplying only a date: "yyyy-mm-dd"
+# It will be converted and stored as milliseconds since epoch
+PUT /reviews/_doc/2
+{
+  "rating": 4.5,
+  "content": "Not bad. Not bad at all!",
+  "product_id": 123,
+  "created_at": "2015-03-27",
+  "author": {
+    "first_name": "Average",
+    "last_name": "Joe",
+    "email": "avgjoe@example.com"
+  }
+}
+
+# Supplying both a date and time: "yyyy-mm-ddThh:mm:ss"
+# It will be converted and stored as milliseconds since epoch
+# ISO 8601 must be used: 
+# - time separated with T
+# - Z for UTC time zone, no offset (Greenwich), or offset as "+hh:mm"
+PUT /reviews/_doc/3
+{
+  "rating": 3.5,
+  "content": "Could be better",
+  "product_id": 123,
+  "created_at": "2015-04-15T13:07:41Z",
+  "author": {
+    "first_name": "Spencer",
+    "last_name": "Pearson",
+    "email": "spearson@example.com"
+  }
+}
+
+# Specifying the UTC offset
+# "yyyy-mm-ddThh:mm:ss++hh:mm"
+PUT /reviews/_doc/4
+{
+  "rating": 5.0,
+  "content": "Incredible!",
+  "product_id": 123,
+  "created_at": "2015-01-28T09:21:51+01:00",
+  "author": {
+    "first_name": "Adam",
+    "last_name": "Jones",
+    "email": "adam.jones@example.com"
+  }
+}
+
+# Supplying a timestamp (milliseconds since the epoch)
+# Equivalent to 2015-07-04T12:01:24Z
+PUT /reviews/_doc/5
+{
+  "rating": 4.5,
+  "content": "Very useful",
+  "product_id": 123,
+  "created_at": 1436011284000,
+  "author": {
+    "first_name": "Taylor",
+    "last_name": "West",
+    "email": "twest@example.com"
+  }
+}
+
+# Retrieving documents
+GET /reviews/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+```
+
+### Missing Fields
+
+All fields are optional, in contrast to relational DBs. Even when we explicitly define a mapping with some fields, we don't have to use them. Also, when searching, missing fields are ignored.
+
+This allows for more felxibility, but it enforces additional validation/checks at the application level.
+
+### Overview of Mapping Parameters
 
 
 

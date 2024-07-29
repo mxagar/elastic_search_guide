@@ -94,6 +94,14 @@ GET /products/_search
   }
 }
 
+# Delete all the documents of an index
+POST /products/_delete_by_query
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
 # If the index was not created and we index
 # a Document, the index will be created automatically
 # and the Document added to it
@@ -313,8 +321,9 @@ Contents:
 
 - Adding explicit mappings
 - Retrieving mappings
-- Adding/extending mappings to existing indices: adding new fields
+- Extending mappings to existing indices: adding new fields
 - Dates
+- Reindexing: creating new indices because we want to change a field
 
 ```
 ### --- Adding explicit mappings
@@ -464,4 +473,171 @@ PUT /reviews/_doc/5
   }
 }
 
+### --- Reindexing: creating new indices because we want to change a field
+
+# First, we get the mapping of an index
+# We copy the output to paste it in the
+# next command, which creates a new index
+GET /reviews/_mappings
+
+# This is the new index
+# We paste the mapping obtained before
+# and change the field(s) we want:
+# "product_id": {"type": "integer"} -> {"type": "keyword"}
+# PUT /reviews_new
+# {
+#   ... paste the mappings content here
+# }
+PUT /reviews_new
+{
+  "mappings" : {
+    "properties" : {
+      "author" : {
+        "properties" : {
+          "email" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          },
+          "first_name" : {
+            "type" : "text"
+          },
+          "last_name" : {
+            "type" : "text"
+          }
+        }
+      },
+      "content" : {
+        "type" : "text"
+      },
+      "created_at" : {
+        "type" : "date"
+      },
+      "product_id" : {
+        "type" : "keyword"
+      },
+      "rating" : {
+        "type" : "float"
+      }
+    }
+  }
+}
+
+# After the new index is created
+# we add documents to it by reindexing
+# from the old index.
+# Re-indexing is much cheaper than indexing
+# the documents anew!
+# We specify in the source and dest
+# the old and the new indices, respectively
+POST /_reindex
+{
+  "source": {
+    "index": "reviews"
+  },
+  "dest": {
+    "index": "reviews_new"
+  }
+}
+# However, this does not change the _source objects
+# That is not a problem, but if we want
+# to be consistent, we can add a script
+POST /_reindex
+{
+  "source": {
+    "index": "reviews"
+  },
+  "dest": {
+    "index": "reviews_new"
+  },
+  "script": {
+    "source": """
+      if (ctx._source.product_id != null) {
+        ctx._source.product_id = ctx._source.product_id.toString();
+      }
+    """
+  }
+}
+
+# Check that everything run ok
+GET /reviews_new/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# We can also reindex only a subset
+# of the documents.
+# To that end, we need to change the match_all
+# query by a more specific one,
+# e.g., in this example, only
+# reviews greater than 4.0
+# are reindexed
+POST /_reindex
+{
+  "source": {
+    "index": "reviews",
+    "query": {
+      "range": {
+        "rating": {
+          "gte": 4.0
+        }
+      }
+    }
+  },
+  "dest": {
+    "index": "reviews_new"
+  }
+}
+
+# To remove fields when reindexing
+# we apply source-filtering,
+# i.e., we specify the fields from _source
+# that we want to copy -- the rest is ignored!
+POST /_reindex
+{
+  "source": {
+    "index": "reviews",
+    "_source": ["content", "created_at", "rating"]
+  },
+  "dest": {
+    "index": "reviews_new"
+  }
+}
+
+# Renaming field names during reindexing
+POST /_reindex
+{
+  "source": {
+    "index": "reviews"
+  },
+  "dest": {
+    "index": "reviews_new"
+  },
+  "script": {
+    "source": """
+      # Rename "content" field to "comment"
+      ctx._source.comment = ctx._source.remove("content");
+    """
+  }
+}
+
+# Ignore reviews with ratings below 4.0
+# However, it is better in general to use a query
+POST /_reindex
+{
+  "source": {
+    "index": "reviews"
+  },
+  "dest": {
+    "index": "reviews_new"
+  },
+  "script": {
+    "source": """
+      if (ctx._source.rating < 4.0) {
+        ctx.op = "noop"; # Can also be set to "delete"
+      }
+    """
+  }
+}
 ```

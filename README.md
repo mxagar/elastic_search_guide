@@ -1872,7 +1872,24 @@ This allows for more felxibility, but it enforces additional validation/checks a
 
 ### Overview of Mapping Parameters
 
+Apart from adding fields and their types to the mappings, we can tune some other [**Mapping parameters**](Mapping parameters):
 
+- [`format`](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html): to customize `date` fields; better, stick to defaults.
+- `properties`: definition of fields for `object` (implicit type) and `nested` fields.
+- `coerce`: enable/disable type coercion (default: enabled).
+  - index level: before `"mappings"`, we add: `"settings": {"index.mapping.coerce": false}`
+  - field level: within field, we add: `"coerce": false`; field-level configuration overwrites the index level
+- `doc_values`: we can disable it with setting `false` in the field to save storage (Doc Value columnar data is part of Apache Lucene); Doc Values increase speed in aggregation operations but duplicate data.
+- `norms`: we can disable normalization factors used for relevance scoring by setting `false` in the field; during search, we don't only filter, but also rank, however, ranking norms require storage space, and some tagging or numerical fields (i.e., those used for filtering and aggregation) don't actually need to be ranked.
+- `index`: we can set to `false` if we want to avoid a field to be indexed, i.e., it's not going to be used for search queries, although it is in `_source`; it is often used for time series, and it still can be used for aggregations.
+- `null_value`: `NULL` values are ignored, they're not indexed, but if we want to search for NA data, we can add a `null_value` parameter to the field.
+- `copy_to`: we can copy the values of two fields (e.g., first name and last name) to create a new field (e.g., full name), so that the new field can be used in searches, too.
+
+![Coerce](./assets/coerce.png)
+
+![Null values](./assets/null_value.png)
+
+![Copy to](./assets/copy_to.png)
 
 ## Searching for Data
 

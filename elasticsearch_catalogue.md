@@ -381,11 +381,15 @@ GET /reviews/_mapping/field/content
 # using dot-notation
 GET /reviews/_mapping/field/author.email
 
-### --- Adding/extending mappings to existing indices: adding new fields
+### --- Extending mappings to existing indices: adding new fields
 
 # Here, we have an Index reviews
 # and we add a new field to it: 
 # "created_at": { "type": "date" }
+# However, it is usually not possible to change/modify 
+# existing mappings or their fields. 
+# The alternative is to create new mappings 
+# and `_reindex` the old index to the new one.
 PUT /reviews/_mapping
 {
   "properties": {

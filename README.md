@@ -70,10 +70,11 @@ Table of contents:
     - [Adding Explicit Mappings and Retrieving](#adding-explicit-mappings-and-retrieving)
       - [Dot Notation](#dot-notation)
       - [Retrieving Mappings](#retrieving-mappings)
-    - [Adding/Extending Mappings to Existing Indices: Adding New Fields](#addingextending-mappings-to-existing-indices-adding-new-fields)
+    - [Extending Mappings to Existing Indices: Adding New Fields](#extending-mappings-to-existing-indices-adding-new-fields)
     - [Date Type](#date-type)
     - [Missing Fields](#missing-fields)
     - [Overview of Mapping Parameters](#overview-of-mapping-parameters)
+    - [Updating Existing Mappings: Reindexing](#updating-existing-mappings-reindexing)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -310,6 +311,8 @@ bin\elasticsearch.bat
 cd C:\Users\msagardia\packages\kibana-8.14.3
 bin\kibana.bat
 # Unix: bin/kibana
+# Kibana Web UI: http://localhost:5601
+# NOTE: It takes some minutes until Kibana is available...
 # Use ELASTIC_USER & ELASIC_PASSWORD as credentials
 
 ## -- Browser
@@ -1751,7 +1754,7 @@ GET /reviews/_mapping/field/content
 GET /reviews/_mapping/field/author.email
 ```
 
-### Adding/Extending Mappings to Existing Indices: Adding New Fields
+### Extending Mappings to Existing Indices: Adding New Fields
 
 Case: We already have an Index and we'd like to add a field to it. We can do that with the `_mapping` API, by simply adding the field in the `properties`.
 
@@ -1759,6 +1762,10 @@ Case: We already have an Index and we'd like to add a field to it. We can do tha
 # Here, we have an Index reviews
 # and we add a new field to it: 
 # "created_at": { "type": "date" }
+# However, it is usually not possible to change/modify 
+# existing mappings or their fields. 
+# The alternative is to create new mappings 
+# and `_reindex` the old index to the new one.
 PUT /reviews/_mapping
 {
   "properties": {
@@ -1770,6 +1777,8 @@ PUT /reviews/_mapping
 
 GET /reviews/_mapping
 ```
+
+However, it is usually not possible to change/modify existing mappings or their fields. The alternative is to create new mappings and `_reindex` the old index to the new one.
 
 ### Date Type
 
@@ -1890,6 +1899,55 @@ Apart from adding fields and their types to the mappings, we can tune some other
 ![Null values](./assets/null_value.png)
 
 ![Copy to](./assets/copy_to.png)
+
+### Updating Existing Mappings: Reindexing
+
+We have seen how new fields can be added to existing mappings. However, usually it is not possible to modify/update existing mapping fields. If we want to do that, the alternative is to create a new index and reindex the old one to it with the `_reindex` API.
+
+That makes sense: if we want to change a text type field to be a number type, the underlying data structure is different (it wouldn't be an inverted index anymore, but a BKD tree). Therefore, we would need to re-compute everything.
+
+However, we can sometimes add restrictions to existing fields; for instance, we can force a field to ignore items of a given length with `ignore_above`.
+
+```
+# Get mapping of reviews index
+# The field product_id is of type integer
+GET /reviews/_mapping
+
+# Here, we try to change the type of product_id
+# This will yield an error.
+# Alternative: create an new index and reindex this to it.
+PUT /reviews/_mapping
+{
+  "properties": {
+    "product_id": {
+      "type": "keyword"
+    }
+  }
+}
+
+# However, we can sometimes add restrictions to existing fields
+# as shown here: emails longer than 256 characters are ignored now
+PUT /reviews/_mapping
+{
+  "properties": {
+    "author": {
+      "properties": {
+        "email": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    }
+  }
+}
+```
+
+The [Reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html) can be used as follows:
+
+```
+```
+
+
 
 ## Searching for Data
 

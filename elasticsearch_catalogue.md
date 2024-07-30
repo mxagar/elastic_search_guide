@@ -324,6 +324,8 @@ Contents:
 - Extending mappings to existing indices: adding new fields
 - Dates
 - Reindexing: creating new indices because we want to change a field
+- Field Aliases
+- Index Templates
 
 ```
 ### --- Adding explicit mappings
@@ -606,6 +608,8 @@ POST /_reindex
 }
 
 # Renaming field names during reindexing
+# However, reindexing to rename a field
+# is a bed idea -- instead, use field aliases!
 POST /_reindex
 {
   "source": {
@@ -640,4 +644,168 @@ POST /_reindex
     """
   }
 }
+
+### --- Field Aliases
+
+# Reindexing to rename a field is a bed idea;
+# instead, we can use field aliases.
+# Here, we
+# add `comment` alias pointing to the `content` field,
+# so content is an alias of comment.
+# Alias fields can be used as regular fields
+# and the original fields are unaffected
+PUT /reviews/_mapping
+{
+  "properties": {
+    "comment": {
+      "type": "alias",
+      "path": "content"
+    }
+  }
+}
+
+### --- Muilti-field mappings
+
+# The most common multi-field mapping
+# is the one where a field is both text and keyword.
+# To that end:
+# We add `keyword` mapping to a `text` field
+# This effectively creates an additional index:
+# ingredients.keyword
+# In contrast to the ingredients field,
+# which allows non-exact term search
+# the new (sub-)field allows exact search
+PUT /multi_field_test
+{
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text"
+      },
+      "ingredients": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}
+
+# Querying the `text` mapping
+# (non-exact match/search)
+# (assuming multi_field_test has been filled)
+GET /multi_field_test/_search
+{
+  "query": {
+    "match": {
+      "ingredients": "Spaghetti"
+    }
+  }
+}
+
+# Querying the `keyword` mapping (exact match)
+# (assuming multi_field_test has been filled)
+# A new index `ingredients.keyword` has been created
+# apart from `ingredients`, and here we search
+# for exactly matching keywords in `ingredients.keyword`
+# Thus, multi-fields allow different search types
+# but bear in mind that in reality multiple indices
+# are created under the hood
+GET /multi_field_test/_search
+{
+  "query": {
+    "term": {
+      "ingredients.keyword": "Spaghetti"
+    }
+  }
+}
+
+### --- Index Templates
+
+# We can create a reusable index template
+# by specifying its settings and mappings
+# Example index template: access-logs-*
+PUT /_index_template/access-logs
+{
+  "index_patterns": ["access-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 2,
+      "index.mapping.coerce": false
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "url.original": { "type": "wildcard" },
+        "url.path": { "type": "wildcard" },
+        "url.scheme": { "type": "keyword" },
+        "url.domain": { "type": "keyword" },
+        "client.geo.continent_name": { "type": "keyword" },
+        "client.geo.country_name": { "type": "keyword" },
+        "client.geo.region_name": { "type": "keyword" },
+        "client.geo.city_name": { "type": "keyword" },
+        "user_agent.original": { "type": "keyword" },
+        "user_agent.name": { "type": "keyword" },
+        "user_agent.version": { "type": "keyword" },
+        "user_agent.device.name": { "type": "keyword" },
+        "user_agent.os.name": { "type": "keyword" },
+        "user_agent.os.version": { "type": "keyword" }
+      }
+    }
+  }
+}
+
+# Then, we add a doc to a non-existing index
+# but whose template is already created (above)
+# - Index access-logs-2023-01 will be created automatically
+# - doc will be indexed
+POST /access-logs-2023-01/_doc
+{
+  "@timestamp": "2023-01-01T00:00:00Z",
+  "url.original": "https://example.com/products",
+  "url.path": "/products",
+  "url.scheme": "https",
+  "url.domain": "example.com",
+  "client.geo.continent_name": "Europe",
+  "client.geo.country_name": "Denmark",
+  "client.geo.region_name": "Capital City Region",
+  "client.geo.city_name": "Copenhagen",
+  "user_agent.original": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1",
+  "user_agent.name": "Safari",
+  "user_agent.version": "12.0",
+  "user_agent.device.name": "iPhone",
+  "user_agent.os.name": "iOS",
+  "user_agent.os.version": "12.1.0"
+}
+
+# We can also manually create an index when a template exists
+# and can even extend the definition of the template,
+# e.g., by adding a new field - here, url.query (keyword) is added
+PUT /access-logs-2023-02
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "url.query": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+
+# Get/retrieve an index
+GET /access-logs-2023-01
+GET /access-logs-2023-02
+
+# Retrieving an index template
+GET /_index_template/access-logs
+
+# Deleting an index template
+DELETE /_index_template/access-logs
+
 ```

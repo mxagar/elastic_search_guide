@@ -2,7 +2,7 @@
 
 This are my notes on **ElasticSearch** and **search methods** with focus on Machine Learning.
 
-I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide), but extended it mainly consulting the official Elastic documentation and other sources that deal with data structures for search operations. The couser by Bo Andersen has a Github repository with a summary of all the commands used: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
+I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide), but extended it mainly consulting the official Elastic documentation and other sources that deal with data structures for search operations. The course by Bo Andersen has a Github repository with a summary of all the commands used: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
 
 My respository is structured as follows:
 
@@ -75,6 +75,10 @@ Table of contents:
     - [Missing Fields](#missing-fields)
     - [Overview of Mapping Parameters](#overview-of-mapping-parameters)
     - [Updating Existing Mappings: Reindexing](#updating-existing-mappings-reindexing)
+    - [Field Aliases](#field-aliases)
+    - [Multi-Field Mappings](#multi-field-mappings)
+    - [Index Templates](#index-templates)
+    - [Dynamic Mapping](#dynamic-mapping)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -1594,7 +1598,7 @@ The type `keyword` is another interesting one: it's like a tag which can be used
 
 Then, `keyword` fields can be used for fast filtering which are the previous necessary step for aggregation and summarization operations.
 
-Full-text searches are performed in `text` fields, and the query text doesn't need to match exactly the indexed text. The fields with `text` are ingested into inverted indices; each field has an inverted index.
+Full-text searches are performed in `text` fields, and **the query text doesn't need to match exactly** the indexed text. The fields with `text` are ingested into inverted indices; each field has an inverted index.
 
 ### Type Coercion
 
@@ -2084,6 +2088,8 @@ POST /_reindex
 }
 
 # Renaming field names during reindexing
+# However, reindexing to rename a field
+# is a bed idea -- instead, use field aliases!
 POST /_reindex
 {
   "source": {
@@ -2120,6 +2126,274 @@ POST /_reindex
 }
 ```
 
+### Field Aliases
+
+Reindexing to rename a field is a bad idea; instead, we can use field aliases. Alias fields can be used as regular fields and the original fields are unaffected; that's because queries with aliases are translated into queries with the original fields before being executed.
+
+```
+# Reindexing to rename a field is a bed idea;
+# instead, we can use field aliases.
+# Here, we
+# add `comment` alias pointing to the `content` field,
+# so content is an alias of comment.
+# Alias fields can be used as regular fields
+# and the original fields are unaffected
+PUT /reviews/_mapping
+{
+  "properties": {
+    "comment": {
+      "type": "alias",
+      "path": "content"
+    }
+  }
+}
+
+# Using the field alias
+# Here we search for all items
+# that have outstanding in the comment alias field
+GET /reviews/_search
+{
+  "query": {
+    "match": {
+      "comment": "outstanding"
+    }
+  }
+}
+
+# Using the "original" field name still works
+GET /reviews/_search
+{
+  "query": {
+    "match": {
+      "content": "outstanding"
+    }
+  }
+}
+```
+
+### Multi-Field Mappings
+
+It is possible to add two types to a field in some cases; this is frequently done with key text fields:
+
+- Text fields can be loosely used to search for non-exact words.
+- Keyword fields match exact words.
+- Sometimes we'd like to be flexible in a field: in some cases we want a loosely defined search (text) and in some cases an exact match (keyword).
+
+In the used example, we have a DB with recipies. The recipes mapping has two fields where the key ingredients could appear: `description` and `ingredients`.
+
+The `ingredients` field is defined as multifield: this can be done by adding a `fields` key under the `"type": "text"` key-value pair, which contains `"keyword": {"type": "keyword"}`. That way, we can perform both `text` (non-exact) and `keyword` (exact) searches on the field. That is an example use case of multi-field mappings.
+
+```
+# The most common multi-field mapping
+# is the one where a field is both text and keyword.
+# To that end:
+# We add `keyword` mapping to a `text` field
+# This effectively creates an additional index:
+# ingredients.keyword
+# In contrast to the ingredients field,
+# which allows non-exact term search
+# the new (sub-)field allows exact search
+PUT /multi_field_test
+{
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text"
+      },
+      "ingredients": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}
+
+# Index a test document
+POST /multi_field_test/_doc
+{
+  "description": "To make this spaghetti carbonara, you first need to...",
+  "ingredients": ["Spaghetti", "Bacon", "Eggs"]
+}
+
+# Retrieve documents: everything OK
+GET /multi_field_test/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# Querying the `text` mapping
+# (non-exact match/search)
+GET /multi_field_test/_search
+{
+  "query": {
+    "match": {
+      "ingredients": "Spaghetti"
+    }
+  }
+}
+
+# Querying the `keyword` mapping (exact match)
+# A new index `ingredients.keyword` has been created
+# apart from `ingredients`, and here we search
+# for exactly matching keywords in `ingredients.keyword`
+# Thus, multi-fields allow different search types
+# but bear in mind that in reality multiple indices
+# are created under the hood.
+GET /multi_field_test/_search
+{
+  "query": {
+    "term": {
+      "ingredients.keyword": "Spaghetti"
+    }
+  }
+}
+
+# Clean up
+DELETE /multi_field_test
+```
+
+### Index Templates
+
+We can create index templates that can be used to apply settings and mappings whenever a new index is created, if the name matches a pattern. We use the API `_index_template` for that.
+
+General structure of an index template:
+
+```
+# Index Template
+PUT /_index_template/my-index-template        # (Arbitraty) Name
+{
+  "index_patterns": ["my-index-pattern*"],    # Pattern(s) to apply template in
+  "template": {
+    "settings": { ... },                      # Settings for new index (optional)
+    "mappings": { ... }                       # Field mappings for new index (optional)
+  }
+}
+```
+
+Example use-case: log data, e.g., HTTP access logs that are stored in periods, i.e., 
+
+- yearly: `access-logs-yyyy`
+- monthly: `access-logs-yyyy-mm`
+- weekly, daily, etc.
+
+For each new period, we build a new index with a standardized name and pre-defined mappings.
+
+One great advantage of index templates is that indices are created following the templates dynamically:
+
+- When we add a `_doc`, ES check if the index exists.
+- If it exists, the `_doc` is indexed.
+- If not, ES checks if a matching template exists:
+  - If so, a new index is created after the template and the `_doc` is indexed.
+  - If not, a new default index is created after the `_doc` and the `_doc` is indexed.
+
+Thus, no schedule jobs are needed to create periodically emerging indices.
+
+Additionally, we can still manually create indices when a template exists; in that case, ES checks if a matching template exists, and if so our requested index and the template are merged. This is helpful, for instance, when we want to have a new index after the template but extended with a new field.
+
+Example index template:
+
+```
+# We can create a reusable index template
+# by specifying its settings and mappings
+# Example index template: access-logs-*
+PUT /_index_template/access-logs
+{
+  "index_patterns": ["access-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 2,
+      "index.mapping.coerce": false
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "url.original": { "type": "wildcard" },
+        "url.path": { "type": "wildcard" },
+        "url.scheme": { "type": "keyword" },
+        "url.domain": { "type": "keyword" },
+        "client.geo.continent_name": { "type": "keyword" },
+        "client.geo.country_name": { "type": "keyword" },
+        "client.geo.region_name": { "type": "keyword" },
+        "client.geo.city_name": { "type": "keyword" },
+        "user_agent.original": { "type": "keyword" },
+        "user_agent.name": { "type": "keyword" },
+        "user_agent.version": { "type": "keyword" },
+        "user_agent.device.name": { "type": "keyword" },
+        "user_agent.os.name": { "type": "keyword" },
+        "user_agent.os.version": { "type": "keyword" }
+      }
+    }
+  }
+}
+
+# Then, we add a doc to a non-existing index
+# but whose template is already created (above)
+# - Index access-logs-2023-01 will be created automatically
+# - doc will be indexed
+POST /access-logs-2023-01/_doc
+{
+  "@timestamp": "2023-01-01T00:00:00Z",
+  "url.original": "https://example.com/products",
+  "url.path": "/products",
+  "url.scheme": "https",
+  "url.domain": "example.com",
+  "client.geo.continent_name": "Europe",
+  "client.geo.country_name": "Denmark",
+  "client.geo.region_name": "Capital City Region",
+  "client.geo.city_name": "Copenhagen",
+  "user_agent.original": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1",
+  "user_agent.name": "Safari",
+  "user_agent.version": "12.0",
+  "user_agent.device.name": "iPhone",
+  "user_agent.os.name": "iOS",
+  "user_agent.os.version": "12.1.0"
+}
+
+# We can also manually create an index when a template exists
+# and can even extend the definition of the template,
+# e.g., by adding a new field - here, url.query (keyword) is added
+PUT /access-logs-2023-02
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "url.query": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+
+# Get/retrieve an index
+GET /access-logs-2023-01
+GET /access-logs-2023-02
+
+# Retrieving an index template
+GET /_index_template/access-logs
+
+# Deleting an index template
+DELETE /_index_template/access-logs
+```
+
+Final notes:
+
+- Index template patterns cannot overlap, except we use the `priority` property.
+- ES ships with some reserved index patterns:
+  - `logs-*-*`
+  - `metrics-*-*`
+  - `synthetics-*-*`
+  - `profiling-*-*`
+
+### Dynamic Mapping
+
 
 
 ## Searching for Data
@@ -2154,9 +2428,7 @@ TBD.
 
 ## Kibana
 
-TBD.
-
-:construction:
+See [`./kibana/`](./kibana/).
 
 ## Logstash
 

@@ -326,6 +326,8 @@ Contents:
 - Reindexing: creating new indices because we want to change a field
 - Field Aliases
 - Index Templates
+- Configuring Dynamic Mappings
+- Dynamic templates
 
 ```
 ### --- Adding explicit mappings
@@ -807,5 +809,218 @@ GET /_index_template/access-logs
 
 # Deleting an index template
 DELETE /_index_template/access-logs
+
+### --- Configuring Dynamic Mappings
+
+# Disable dynamic mapping ("dynamic": false)
+# New fields are ignored, if we try to insert them
+# but still continue being part of _source
+# Remember _source is not part of the search
+# data structures.
+PUT /people
+{
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+# Disable strictly dynamic mapping ("dynamic": "strict"),
+# i.e., if we try to insert new fields an error occurs.
+PUT /people
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+# The dynamic setting is inherited to all the fields in
+# the mapping, but we can overwrite it in any field.
+# Here other is an object an we set "dynamic": true,
+# so we can extend it, even though we cannot extend 
+# the index outside from other, because it's set to "dynamic": "strict"!
+PUT /computers
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "specifications": {
+        "properties": {
+          "cpu": {
+            "properties": {
+              "name": {
+                "type": "text"
+              }
+            }
+          },
+          "other": {
+            "dynamic": true,
+            "properties": {  }
+          }
+        }
+      }
+    }
+  }
+}
+
+# We can set "numeric_detection": true
+# So that new fields will be forced to be
+# numbers if possible, 
+# even when they are input as text
+PUT /computers
+{
+  "mappings": {
+    "numeric_detection": true
+  }
+}
+# New string fields are indexed
+# as numbers, because it's possible
+# and "numeric_detection": true
+POST /computers/_doc
+{
+  "specifications": {
+    "other": {
+      "max_ram_gb": "32", # long
+      "bluetooth": "5.2" # float
+    }
+  }
+}
+
+### --- Dynamic Templates
+
+# dynamic_templates can be used to define the parsing
+# of concrete values to a given type + parameters, among others
+# Example: Map whole numbers to `integer` instead of `long`
+PUT /dynamic_template_test
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "integers": {
+          "match_mapping_type": "long", # every JSON field with a whole number...
+          "mapping": {
+            "type": "integer" # ... will be parsed as integer
+          }
+        }
+      }
+    ]
+  }
+}
+
+# One common use case would be to modify
+# the way strings are mapped by default; 
+# instead of creating for a string a `text` and `keyword` field, 
+# we might want to create just a `text` field,
+# or limit the length of the keyword with `ignore_above`.
+# In the example, we modify default mapping for strings:
+# We set `ignore_above` to 512,
+# so all strings will get a text field and a keyword field
+# but the maximum length of the keyword will be 512
+PUT /test_index
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "strings": {
+          "match_mapping_type": "string",
+          "mapping": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 512
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+
+# For each dynamic template, 
+# we have conditions that can be specified 
+# with **`match` and/or `unmatch`** parameters:
+# - `"match": "text_*"`: all fields with a name that matches `text_*`;
+# we can apply regex here!
+# - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`;
+# we can apply regex here!
+PUT /test_index
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "strings_only_text": {
+          "match_mapping_type": "string",
+          "match": "text_*",
+          "unmatch": "*_keyword",
+          "mapping": {
+            "type": "text"
+          }
+        }
+      },
+      {
+        "strings_only_keyword": {
+          "match_mapping_type": "string",
+          "match": "*_keyword",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ]
+  }
+}
+
+POST /test_index/_doc
+{
+  "text_product_description": "A description.", # first template is matched -> type: text
+  "text_product_id_keyword": "ABC-123" # second template is matched -> type: keyword
+}
+
+# In the context of dynamic mapping definitions,
+# we also have the **`path_match` and `path_unmatch`** parameters,
+# which refer to the dotted field name, i.e., `field_name.subfield_name`.
+PUT /test_index
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "copy_to_full_name": {
+          "match_mapping_type": "string",
+          "path_match": "employer.name.*",
+          "mapping": {
+            "type": "text",
+            "copy_to": "full_name"
+          }
+        }
+      }
+    ]
+  }
+}
+
+POST /test_index/_doc
+{
+  "employer": {
+    "name": {
+      "first_name": "John",
+      "middle_name": "Edward",
+      "last_name": "Doe"
+    }
+  }
+}
+
 
 ```

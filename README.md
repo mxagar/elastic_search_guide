@@ -88,6 +88,7 @@ Table of contents:
     - [Custom Analyzer](#custom-analyzer)
     - [Adding/Updating Analyzers to/from Existing Indices](#addingupdating-analyzers-tofrom-existing-indices)
   - [Searching for Data](#searching-for-data)
+    - [Term-Level Queries](#term-level-queries)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3019,6 +3020,10 @@ The following JSON is returned. Note the fields:
   }
 }
 ```
+
+### Term-Level Queries
+
+
 
 ## Joining Queries
 

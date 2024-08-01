@@ -22,6 +22,11 @@ Low hanging fruits:
   - disable `doc_values`
   - disable `norms`
   - disable `index`
+  - disable mapping strings to both `text` and `keyword`, but choose.
+
+- Suggest preference for explicit mappings; e.g., choose `strict` over `dynamic: false`.
+
+- Suggest appropriate numeric types; integers are sometimes enough, as compared to longs.
 
 - Suggest field aliases instead of reindexing if the only purpose of reindexing is renaming fields
 

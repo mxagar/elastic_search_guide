@@ -85,6 +85,9 @@ Table of contents:
     - [Stemming and Stop Words](#stemming-and-stop-words)
     - [Analyzers and Search Queries](#analyzers-and-search-queries)
     - [Built-in Analyzers](#built-in-analyzers)
+    - [Custom Analyzer](#custom-analyzer)
+    - [Adding Analyzers to Existing Indices](#adding-analyzers-to-existing-indices)
+    - [Updating an Existing Analyzer](#updating-an-existing-analyzer)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -2753,6 +2756,158 @@ There are [pre-configured analyzers](https://www.elastic.co/guide/en/elasticsear
   - regex used to match token separators
   - lowercase
 - [Language specific analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-lang-analyzer.html), e.g., `english`.
+
+### Custom Analyzer
+
+We can create custom analyzers, similar to the [built-in analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html). These are created for each index, usually when creating the index; however, we can also add them later, as shown in the next section.
+
+To create a custom analyzer, we need to build an `analyzer` object and configure it with the filters we need; we can check those filters in the [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis.html), e.g., by looking how the built-in analyzers are configured. Let's imagine we want an analyzer able to parse/process a text like the following:
+
+    "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
+
+```
+# Analyze the text with the standard analyzer
+# HTML characters are tokenized one by one...
+# We need to create our own analyzer...
+POST /_analyze
+{
+  "analyzer": "standard",
+  "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
+}
+
+# Creation of a custom analyzer
+# able to process a text with HTML tags
+# and handle special characters
+# Note that we create it within an index: analyzer_test
+# In other words, it is created when creting the index.
+# It can be added later too, though, as shown below.
+PUT /analyzer_test
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_custom_analyzer": {
+          "type": "custom",
+          "char_filter": ["html_strip"],
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "stop",           # remove stop words
+            "asciifolding"    # convert special symbols to ASCII equivalent
+          ]
+        }
+      }
+    }
+  }
+}
+
+# Analyze the text with the custom analyzer
+# Note that we need to run it within the index
+# where it was defined
+POST /analyzer_test/_analyze
+{
+  "analyzer": "standard",
+  "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
+}
+
+# We can also alter the filters
+# For instance, here we create a filter spanish_stop
+# which removes Spanish stop words.
+# We can do the same thing for
+# - character filters
+# - tokenizers
+PUT /analyzer_test
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "spanish_stop": {
+          "type": "stop",
+          "stopwords": "_spanish_"
+        }
+      },
+      "char_filter": {
+        # Add character filters here
+      },
+      "tokenizer": {
+        # Add tokenizers here
+      },
+      "analyzer": {
+        "my_custom_analyzer": {
+          "type": "custom",
+          "char_filter": ["html_strip"],
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "spanish_stop",
+            "asciifolding"
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### Adding Analyzers to Existing Indices
+
+When we have already created an index but we'd like to add a custom analyzer to it, we can do it via the `_settings` API. It uses the same syntax/configuration as when creating an index and adding a custom analyzer to it (i.e., previous section).
+
+However, we need to consider that settings can be **static** and **dynamic**:
+
+- Dynamic settings of an index can be changed without downtime, anytime.
+- Static settings of an index cannot be changed when an index is open, i.e., we need to close it first.
+
+A custom analyzer is a *static* setting, so we need to close the corresponding index, add the analyzer, and re-open the index again. The same happens for:
+
+- character filters
+- tokenizers
+- other filters
+- etc.
+
+```
+# First, close the index
+# This is necessary because
+# the analyzer setting is static
+# not dynamic, i.e., we need to
+# stop any operations in the index
+# before we change it
+POST /analyzer_test/_close
+
+# Then, create/add a custom analyzer
+# The syntax is the same as when
+# we create and configure an index
+# with a custom analyzer
+PUT /analyzer_test/_settings
+{
+  "analysis": {
+    "analyzer": {
+      "my_second_analyzer": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "char_filter": ["html_strip"],
+        "filter": [
+          "lowercase",
+          "stop",
+          "asciifolding"
+        ]
+      }
+    }
+  }
+}
+
+# Re-Open the index again
+# If an index is closed, no queries are accepted
+# no indexing of Documents can happen
+POST /analyzer_test/_open
+
+# Check that the change took place
+GET /analyzer_test/_settings
+```
+
+### Updating an Existing Analyzer
+
+
 
 ## Searching for Data
 

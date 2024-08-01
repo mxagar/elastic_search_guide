@@ -2963,7 +2963,14 @@ GET /products/_search
 }
 ```
 
-The following JSON is returned:
+The following JSON is returned. Note the fields:
+
+- The time it took (milliseconds).
+- Whether it timed out or not.
+- The total number of shards (also non-allocated), as well as the used ones.
+- The number of hit/found documents; if the value is accurate, we get the relation `eq`.
+- The highest relevance score: `max_score`.
+- `hits.hits` contains the Documents as JSON objects `{}` listed in a list; each Document has its `_source` and its metadata.
 
 ```json
 {
@@ -2982,7 +2989,7 @@ The following JSON is returned:
     },
     "max_score": 1,
     "hits": [
-      {
+      { # first Document
         "_index": "products",
         "_id": "1",
         "_score": 1,
@@ -3004,8 +3011,13 @@ The following JSON is returned:
           "created": "2004/05/13"
         }
       },
-      {
+      { # second Document
         "_index": "products",
+        ...
+      }
+      ...
+  }
+}
 ```
 
 ## Joining Queries

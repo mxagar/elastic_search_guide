@@ -328,6 +328,8 @@ Contents:
 - Index Templates
 - Configuring Dynamic Mappings
 - Dynamic templates
+- Custom analyzers
+- Adding Analyzers to Existing Indices
 
 ```
 ### --- Adding explicit mappings
@@ -1021,6 +1023,89 @@ POST /test_index/_doc
     }
   }
 }
+
+### --- Custom analyzers
+
+# Analyze the text with the standard analyzer
+# HTML characters are tokenized one by one...
+# We need to create our own analyzer...
+POST /_analyze
+{
+  "analyzer": "standard",
+  "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
+}
+
+# Creation of a custom analyzer
+# able to process a text with HTML tags
+# and handle special characters
+# Note that we create it within an index: analyzer_test
+# In other words, it is created when creting the index.
+# It can be added later too, though, as shown below.
+PUT /analyzer_test
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_custom_analyzer": {
+          "type": "custom",
+          "char_filter": ["html_strip"],
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "stop",           # remove stop words
+            "asciifolding"    # convert special symbols to ASCII equivalent
+          ]
+        }
+      }
+    }
+  }
+}
+
+# Analyze the text with the custom analyzer
+# Note that we need to run it within the index
+# where it was defined
+POST /analyzer_test/_analyze
+{
+  "analyzer": "standard",
+  "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
+}
+
+### --- Adding Analyzers to Existing Indices
+
+# First, close the index
+# This is necessary because
+# the analyzer setting is static
+# not dynamic, i.e., we need to
+# stop any operations in the index
+# before we change it
+POST /analyzer_test/_close
+
+# Then, create/add a custom analyzer
+# The syntax is the same as when
+# we create and configure an index
+# with a custom analyzer
+PUT /analyzer_test/_settings
+{
+  "analysis": {
+    "analyzer": {
+      "my_second_analyzer": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "char_filter": ["html_strip"],
+        "filter": [
+          "lowercase",
+          "stop",
+          "asciifolding"
+        ]
+      }
+    }
+  }
+}
+
+# Re-Open the index again
+# If an index is closed, no queries are accepted
+# no indexing of Documents can happen
+POST /analyzer_test/_open
 
 
 ```

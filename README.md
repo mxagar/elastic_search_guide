@@ -86,8 +86,7 @@ Table of contents:
     - [Analyzers and Search Queries](#analyzers-and-search-queries)
     - [Built-in Analyzers](#built-in-analyzers)
     - [Custom Analyzer](#custom-analyzer)
-    - [Adding Analyzers to Existing Indices](#adding-analyzers-to-existing-indices)
-    - [Updating an Existing Analyzer](#updating-an-existing-analyzer)
+    - [Adding/Updating Analyzers to/from Existing Indices](#addingupdating-analyzers-tofrom-existing-indices)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -2849,7 +2848,7 @@ PUT /analyzer_test
 }
 ```
 
-### Adding Analyzers to Existing Indices
+### Adding/Updating Analyzers to/from Existing Indices
 
 When we have already created an index but we'd like to add a custom analyzer to it, we can do it via the `_settings` API. It uses the same syntax/configuration as when creating an index and adding a custom analyzer to it (i.e., previous section).
 
@@ -2865,6 +2864,8 @@ A custom analyzer is a *static* setting, so we need to close the corresponding i
 - other filters
 - etc.
 
+Updating an existing analyzer requires the same calls, but at the end we need to call the `_update_by_query` API to fix Documents that were indexed with the old analyzer; otherwise, there might be inconsistencies and the search doesn't work properly.
+
 ```
 # First, close the index
 # This is necessary because
@@ -2878,6 +2879,9 @@ POST /analyzer_test/_close
 # The syntax is the same as when
 # we create and configure an index
 # with a custom analyzer
+# Updating and existing one is done also with
+# the same call, but we additionally need to
+# call the _update_by_query API, shown below
 PUT /analyzer_test/_settings
 {
   "analysis": {
@@ -2903,11 +2907,15 @@ POST /analyzer_test/_open
 
 # Check that the change took place
 GET /analyzer_test/_settings
+
+# If we have updated the analyzer,
+# and not created a new one,
+# we need to update the Documents
+# to be processed by the new analyzer,
+# otherwise the indexed values are inconsistent.
+# This call re-indexes all Documents again.
+POST /analyzer_test/_update_by_query?conflicts=proceed
 ```
-
-### Updating an Existing Analyzer
-
-
 
 ## Searching for Data
 

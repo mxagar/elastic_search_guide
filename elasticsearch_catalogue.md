@@ -329,7 +329,7 @@ Contents:
 - Configuring Dynamic Mappings
 - Dynamic templates
 - Custom analyzers
-- Adding Analyzers to Existing Indices
+- Adding/Updating Analyzers to/from Existing Indices
 
 ```
 ### --- Adding explicit mappings
@@ -1070,7 +1070,7 @@ POST /analyzer_test/_analyze
   "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 }
 
-### --- Adding Analyzers to Existing Indices
+### --- Adding/Updating Analyzers to/from Existing Indices
 
 # First, close the index
 # This is necessary because
@@ -1084,6 +1084,9 @@ POST /analyzer_test/_close
 # The syntax is the same as when
 # we create and configure an index
 # with a custom analyzer
+# Updating and existing one is done also with
+# the same call, but we additionally need to
+# call the _update_by_query API, shown below
 PUT /analyzer_test/_settings
 {
   "analysis": {
@@ -1107,5 +1110,12 @@ PUT /analyzer_test/_settings
 # no indexing of Documents can happen
 POST /analyzer_test/_open
 
+# If we have updated the analyzer,
+# and not created a new one,
+# we need to update the Documents
+# to be processed by the new analyzer,
+# otherwise the indexed values are inconsistent.
+# This call re-indexes all Documents again.
+POST /analyzer_test/_update_by_query?conflicts=proceed
 
 ```

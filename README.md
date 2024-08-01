@@ -78,7 +78,13 @@ Table of contents:
     - [Field Aliases](#field-aliases)
     - [Multi-Field Mappings](#multi-field-mappings)
     - [Index Templates](#index-templates)
-    - [Dynamic Mapping](#dynamic-mapping)
+    - [Introduction to Dynamic Mappings](#introduction-to-dynamic-mappings)
+    - [Configuring Dynamic Mappings](#configuring-dynamic-mappings)
+    - [Dynamic Templates](#dynamic-templates)
+    - [Mapping Recommendations](#mapping-recommendations)
+    - [Stemming and Stop Words](#stemming-and-stop-words)
+    - [Analyzers and Search Queries](#analyzers-and-search-queries)
+    - [Built-in Analyzers](#built-in-analyzers)
   - [Searching for Data](#searching-for-data)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
@@ -2260,7 +2266,7 @@ DELETE /multi_field_test
 
 ### Index Templates
 
-We can create index templates that can be used to apply settings and mappings whenever a new index is created, if the name matches a pattern. We use the API `_index_template` for that.
+We can create [index templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-template.html) that can be used to apply settings and mappings whenever a new index is created, if the name matches a pattern. We use the API `_index_template` for that.
 
 General structure of an index template:
 
@@ -2392,9 +2398,361 @@ Final notes:
   - `synthetics-*-*`
   - `profiling-*-*`
 
-### Dynamic Mapping
+### Introduction to Dynamic Mappings
 
+Dynamic mapping refers to the fact that the index is automatically created when we try to ingest a Document in an index which has not been created. The fields and types are automatically inferred and the mapping is automatically created.
 
+This list shows how this inferences occurs:
+
+- JSON string -> `text` + `keyword` subfield (to allow both exact and non-exact searches), or `date` if possible, or `float` / `int` if possible
+- JSON integer -> `long`
+- JSON float -> `float`
+- JSON boolean -> `boolean`
+- JSON object -> `object`
+
+However, leaving ES to automatically infer the mapping is in some cases a waste of resources; e.g., for text fields, two fields are really created, with their associated data structures.
+
+We can combine explicit and dynamic mapping, i.e., we create an explicit mapping first and add a new field dynamically via a Document. 
+
+```
+# Create index with one field mapping
+PUT /people
+{
+  "mappings": {
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+# Index a test document with an unmapped field
+POST /people/_doc
+{
+  "first_name": "Mikel",
+  "last_name": "Sagardia"
+}
+
+# Retrieve mapping
+# both first_name and last_name fields appear
+# but last_name has two types: text + keyword
+# because it was dynamically inferred
+GET /people/_mapping
+
+# Clean up
+DELETE /people
+```
+
+### Configuring Dynamic Mappings
+
+We can configure daynamic mapping in several ways:
+
+- We can disable it with `"dynamic": false` or `"strict"`.
+- We can force/activate `numeric_detection`.
+- We can disable automatic date detection with `"date_detection": false`.
+
+```
+# Disable dynamic mapping ("dynamic": false)
+# New fields are ignored, if we try to insert them
+# but still continue being part of _source
+# Remember _source is not part of the search
+# data structures.
+PUT /people
+{
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+# Disable strictly dynamic mapping ("dynamic": "strict"),
+# i.e., if we try to insert new fields an error occurs.
+PUT /people
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+# The dynamic setting is inherited to all the fields in
+# the mapping, but we can overwrite it in any field.
+# Here other is an object an we set "dynamic": true,
+# so we can extend it, even though we cannot extend 
+# the index outside from other, because it's set to "dynamic": "strict"!
+PUT /computers
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "specifications": {
+        "properties": {
+          "cpu": {
+            "properties": {
+              "name": {
+                "type": "text"
+              }
+            }
+          },
+          "other": {
+            "dynamic": true,
+            "properties": {  }
+          }
+        }
+      }
+    }
+  }
+}
+
+# We can set "numeric_detection": true
+# So that new fields will be forced to be
+# numbers if possible, 
+# even when they are input as text
+PUT /computers
+{
+  "mappings": {
+    "numeric_detection": true
+  }
+}
+# New string fields are indexed
+# as numbers, because it's possible
+# and "numeric_detection": true
+POST /computers/_doc
+{
+  "specifications": {
+    "other": {
+      "max_ram_gb": "32", # long
+      "bluetooth": "5.2" # float
+    }
+  }
+}
+```
+
+### Dynamic Templates
+
+Another way of configuring dynamic mappings are dynamic templates, defined inside the key `dynamic_templates`. We basically define a mapping for any new field with a concrete type, e.g., every whole number needs to be parsed as a `long`. Concretely, a `dynamic_template` has these components:
+
+- Each dynamic template in `dynamic_templates` is an object defined with a meaningfull name, e.g., `"integers"` in the example below.
+- Each template needs a matching condition; this condition refers to the JSON data type which will trigger the template, e.g., `"match_mapping_type": "long"` refers to all whole numbers. Other JSON types we can reference are: `boolean, object ({...}), string, date, double, * (any)`.
+- Finally, we have a `"mapping"` field in which we wan define the typea and further parameters.
+
+```
+# dynamic_templates can be used to define the parsing
+# of concrete values to a given type + parameters, among others
+# Example: Map whole numbers to `integer` instead of `long`
+PUT /dynamic_template_test
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "integers": {
+          "match_mapping_type": "long", # every JSON field with a whole number...
+          "mapping": {
+            "type": "integer" # ... will be parsed as integer
+          }
+        }
+      }
+    ]
+  }
+}
+
+# Test the dynamic template
+POST /dynamic_template_test/_doc
+{
+  "in_stock": 123
+}
+
+# Retrieve mapping (and dynamic template)
+GET /dynamic_template_test/_mapping
+```
+
+One common use case would be to modify the way strings are mapped by default; instead of creating for a string a `text` and `keyword` field, we might want to create just a `text` field, or limit the length of the keyword with `ignore_above`.
+
+```
+# One common use case would be to modify
+# the way strings are mapped by default; 
+# instead of creating for a string a `text` and `keyword` field, 
+# we might want to create just a `text` field,
+# or limit the length of the keyword with `ignore_above`.
+# In the example, we modify default mapping for strings:
+# We set `ignore_above` to 512,
+# so all strings will get a text field and a keyword field
+# but the maximum length of the keyword will be 512
+PUT /test_index
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "strings": {
+          "match_mapping_type": "string",
+          "mapping": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 512
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+For each dynamic template, we have conditions that can be specified with **`match` and/or `unmatch`** parameters:
+
+- `"match": "text_*"`: all fields with a name that matches `text_*`; we can apply regex here!
+- `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`; we can apply regex here!
+
+```
+# For each dynamic template, 
+# we have conditions that can be specified 
+# with **`match` and/or `unmatch`** parameters:
+# - `"match": "text_*"`: all fields with a name that matches `text_*`;
+# we can apply regex here!
+# - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`;
+# we can apply regex here!
+PUT /test_index
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "strings_only_text": {
+          "match_mapping_type": "string",
+          "match": "text_*",
+          "unmatch": "*_keyword",
+          "mapping": {
+            "type": "text"
+          }
+        }
+      },
+      {
+        "strings_only_keyword": {
+          "match_mapping_type": "string",
+          "match": "*_keyword",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ]
+  }
+}
+
+POST /test_index/_doc
+{
+  "text_product_description": "A description.", # first template is matched -> type: text
+  "text_product_id_keyword": "ABC-123" # second template is matched -> type: keyword
+}
+```
+
+Similarly, we have the **`path_match` and `path_unmatch`** parameters, which refer to the dotted field name, i.e., `field_name.subfield_name`.
+
+```
+# In the context of dynamic mapping definitions,
+# we also have the **`path_match` and `path_unmatch`** parameters,
+# which refer to the dotted field name, i.e., `field_name.subfield_name`.
+PUT /test_index
+{
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "copy_to_full_name": {
+          "match_mapping_type": "string",
+          "path_match": "employer.name.*",
+          "mapping": {
+            "type": "text",
+            "copy_to": "full_name"
+          }
+        }
+      }
+    ]
+  }
+}
+
+POST /test_index/_doc
+{
+  "employer": {
+    "name": {
+      "first_name": "John",
+      "middle_name": "Edward",
+      "last_name": "Doe"
+    }
+  }
+}
+```
+
+### Mapping Recommendations
+
+Best practices:
+
+- Prefer explicit mappings; e.g., choose `strict` over `dynamic: false`.
+- Dissable mapping strings to both `text` and `keyword`, but choose.
+- Disable type coercion.
+- Choose appropriate numeric types; integers are sometimes enough, as compared to longs.
+- Set `doc_values: false` if we won't run aggregation operations.
+- Set `norms: false` if we don't need relevance scoreing.
+- Set `index: false` if we won't filter values.
+
+### Stemming and Stop Words
+
+A word (noun, verb, etc.) can change its root form depending on 
+
+- number (singular, plural), 
+- tense (present, past, etc.), 
+- conjugation (first/second/third person, etc.),
+- declination (genitive/possesive), 
+- modus (gerund),
+- etc.
+
+Since we create inverted indices using unique terms, this leads to many useless terms that mean the same thing. To avoid that, **stemming** algorithms transform words to a *root form*. We can choose an analyzer which performs stemming.
+
+    drinking -> drink
+    bottles -> bottl
+    ...
+
+Similarly, **stop words** are the most common words that are filtered out at any analysis, because they provide little to no value to relevance scoring. It was common to remove them in ES, but it's not that usual anymore, because the relevance ranking algorithms in ES have become better.
+
+### Analyzers and Search Queries
+
+When we ingest/index a document, its text fields are processed by the analyzer, which performs the **tokenization** and **stemming** of the words/symbols.
+
+When we run a text search query, that query is processed by the same analyzer by default; otherwise, the queries wouldn't work...
+
+### Built-in Analyzers
+
+There are [pre-configured analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html):
+
+- `standard`: 
+  - splits words
+  - removes punctuation
+  - lowercases
+  - tokenizes
+  - we can enable the removal of stop words
+- `simple`: similar to `standard`
+- `whitespace`
+  - splits tokend by white space
+  - no lowercase
+  - punctuation not removed
+- `keyword`: no tokenization, text used intact
+- `pattern`:
+  - regex used to match token separators
+  - lowercase
+- [Language specific analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-lang-analyzer.html), e.g., `english`.
 
 ## Searching for Data
 

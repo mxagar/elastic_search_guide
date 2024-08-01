@@ -36,7 +36,7 @@ Contents:
 - Update and Delete by Query: Update/Delete a filtered set of documents
 - Batch/Bulk processing
 
-```
+```json
 ### --- Create and delete indices
 
 # Create an index
@@ -293,7 +293,7 @@ GET /products/_search
 
 ## Analyzers
 
-```
+```json
 # Here a text string is analyzed
 # with the standard analyzer:
 # no char filter, standard tokenizer, lowercase token filter
@@ -331,7 +331,7 @@ Contents:
 - Custom analyzers
 - Adding/Updating Analyzers to/from Existing Indices
 
-```
+```json
 ### --- Adding explicit mappings
 
 # We create a mapping for the index reviews

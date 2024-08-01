@@ -872,7 +872,7 @@ The field `node.role` in the response table contains the initial letters of each
 
 ### Creating and Deleting Indices
 
-```
+```json
 # Create an index
 PUT /pages
 
@@ -892,7 +892,7 @@ PUT /products
 
 Indexing a document means to create/add it into the index.
 
-```
+```json
 # Simple JSON Document indexed = created
 # An _id is automatically assigned if not provided
 # As we can see in the returned JSON
@@ -948,7 +948,7 @@ PUT /products_test/_doc/1
 
 ### Retrieving Documents by ID
 
-```
+```json
 # Retrieve Document by ID
 GET /products/_doc/100
 ```
@@ -980,7 +980,7 @@ Notes:
 
 In reality, Documents are **inmutable** in Elastic Search. Under the hood, when we update a Document, we replace it with a new one which contains teh modifications. 
 
-```
+```json
 # Update an existing field
 # To update a Document, 
 # we need to pass a JSON with an object "doc"
@@ -1003,7 +1003,7 @@ POST /products/_update/100
 
 If we want to completely replace a Document, though, we can explicitly use `PUT`, which is intended for creating documents (recall, there is no real updating in ES, but entirely replacing: remove + create):
 
-```
+```json
 PUT /products/_doc/100
 {
   "name": "Toaster",
@@ -1028,7 +1028,7 @@ The Document entity is accessed by the variable `ctx`, short for context. This v
 
 Additionally, we can add conditionals
 
-```
+```json
 # Go to Document with ID 100
 # Decrease by one unit the field in_stock
 POST /products/_update/100
@@ -1110,7 +1110,7 @@ POST /products/_update/100
 - If the Document exists, it is updated.
 - Else, a new Document is created.
 
-```
+```json
 # Upsert: Update or Insert/Create
 # If the product 101 doesn't exist, this creates it
 # Else, it increases in_stock in one unit
@@ -1192,7 +1192,7 @@ Optimistic Concurrency Control is implemented by passing the reference `_primary
 
 If we have a multi-threaded application where multiple threads could modify the same value of a Document, we should use this approach!
 
-```
+```json
 # Get Document with ID 100
 # _primary_term and seq_no are in the metadata
 # We take them to formulate the conditioned update request
@@ -1219,7 +1219,7 @@ To that end
 
 Note that this kind of filtered update might lead to errors/conflicts; if one error occurs, the request is aborted by default, but we can specify to proceed upon conflicts, too.
 
-```
+```json
 # Update a set of filtered Documents: _update_by_query
 # Write the update in "script"
 # Write the filterin "query"
@@ -1239,7 +1239,7 @@ POST /products/_update_by_query
 
 Similarly, we can `_delete_by_query`:
 
-```
+```json
 # Delete all Documents that match the query
 # in this case ALL DOCUMENTS!
 # If errors/conflicts occur, the request is aborted
@@ -1293,7 +1293,7 @@ The `_bulk` API with the `NDJSON` specification has these properties:
 
 More examples:
 
-```
+```json
 # Create new Documents
 # We can list many (action, source) pairs
 # Always newline after a line, also in last JSON
@@ -1423,7 +1423,7 @@ ES ships with built-in analyzers and we can combine them as we please. The stand
 
 We can run the analyzers in our text with the `_analyze` API: 
 
-```
+```json
 # Here a text string is analyzed
 # with the standard analyzer:
 # no char filter, standard tokenizer, lowercase token filter
@@ -1524,7 +1524,7 @@ Note that punctuation is removed by the `standard` tokenizer/analyzer (also smil
 
 We can also explicitly define the components of the analyzer:
 
-```
+```json
 # Analyzer components explicitly defined:
 # character filer, tokenizer, token filters
 # This call produces the same results are before
@@ -1621,7 +1621,7 @@ One important point is that the real values used during search are not the ones 
 
 Type coercion can be disabled.
 
-```
+```json
 # The index coercion_test does not exist
 # but it is created and Document 1 added
 # The first time, the type is inferred: float
@@ -1697,7 +1697,7 @@ In this section, a mapping is created, i.e., the equivalent of a table schema. T
 
 Example:
 
-```
+```json
 # We create a mapping for the index reviews
 # For simple types, we define their type key-value
 # For object types, we need to nest a properties key again
@@ -1737,7 +1737,7 @@ PUT /reviews/_doc/1
 
 Another way of adding an object is to use the *dot-notation*, which consists in defining object fields flattened by using `object_name.field_name` keys:
 
-```
+```json
 # Objects can be defined flattened
 # by using object_name.field_name keys 
 PUT /reviews_dot_notation
@@ -1762,7 +1762,7 @@ This *dot-notation* is not exclusive to creating the mappings, it can be used an
 
 #### Retrieving Mappings
 
-```
+```json
 # Retrieving mappings for the `reviews` index
 GET /reviews/_mapping
 
@@ -1778,7 +1778,7 @@ GET /reviews/_mapping/field/author.email
 
 Case: We already have an Index and we'd like to add a field to it. We can do that with the `_mapping` API, by simply adding the field in the `properties`.
 
-```
+```json
 # Here, we have an Index reviews
 # and we add a new field to it: 
 # "created_at": { "type": "date" }
@@ -1820,7 +1820,7 @@ Standard formats must be used for the strings:
 
 Examples:
 
-```
+```json
 # Supplying only a date: "yyyy-mm-dd"
 # It will be converted and stored as milliseconds since epoch
 PUT /reviews/_doc/2
@@ -1928,7 +1928,7 @@ That makes sense: if we want to change a text type field to be a number type, th
 
 However, we can sometimes add restrictions to existing fields; for instance, we can force a field to ignore items of a given length with `ignore_above`.
 
-```
+```json
 # Get mapping of reviews index
 # The field product_id is of type integer
 GET /reviews/_mapping
@@ -1964,7 +1964,7 @@ PUT /reviews/_mapping
 
 The [Reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html) can be used as follows:
 
-```
+```json
 # First, we get the mapping of an index
 # We copy the output to paste it in the
 # next command, which creates a new index
@@ -2138,7 +2138,7 @@ POST /_reindex
 
 Reindexing to rename a field is a bad idea; instead, we can use field aliases. Alias fields can be used as regular fields and the original fields are unaffected; that's because queries with aliases are translated into queries with the original fields before being executed.
 
-```
+```json
 # Reindexing to rename a field is a bed idea;
 # instead, we can use field aliases.
 # Here, we
@@ -2191,7 +2191,7 @@ In the used example, we have a DB with recipies. The recipes mapping has two fie
 
 The `ingredients` field is defined as multifield: this can be done by adding a `fields` key under the `"type": "text"` key-value pair, which contains `"keyword": {"type": "keyword"}`. That way, we can perform both `text` (non-exact) and `keyword` (exact) searches on the field. That is an example use case of multi-field mappings.
 
-```
+```json
 # The most common multi-field mapping
 # is the one where a field is both text and keyword.
 # To that end:
@@ -2272,7 +2272,7 @@ We can create [index templates](https://www.elastic.co/guide/en/elasticsearch/re
 
 General structure of an index template:
 
-```
+```json
 # Index Template
 PUT /_index_template/my-index-template        # (Arbitraty) Name
 {
@@ -2306,7 +2306,7 @@ Additionally, we can still manually create indices when a template exists; in th
 
 Example index template:
 
-```
+```json
 # We can create a reusable index template
 # by specifying its settings and mappings
 # Example index template: access-logs-*
@@ -2416,7 +2416,7 @@ However, leaving ES to automatically infer the mapping is in some cases a waste 
 
 We can combine explicit and dynamic mapping, i.e., we create an explicit mapping first and add a new field dynamically via a Document. 
 
-```
+```json
 # Create index with one field mapping
 PUT /people
 {
@@ -2454,7 +2454,7 @@ We can configure daynamic mapping in several ways:
 - We can force/activate `numeric_detection`.
 - We can disable automatic date detection with `"date_detection": false`.
 
-```
+```json
 # Disable dynamic mapping ("dynamic": false)
 # New fields are ignored, if we try to insert them
 # but still continue being part of _source
@@ -2550,7 +2550,7 @@ Another way of configuring dynamic mappings are dynamic templates, defined insid
 - Each template needs a matching condition; this condition refers to the JSON data type which will trigger the template, e.g., `"match_mapping_type": "long"` refers to all whole numbers. Other JSON types we can reference are: `boolean, object ({...}), string, date, double, * (any)`.
 - Finally, we have a `"mapping"` field in which we wan define the typea and further parameters.
 
-```
+```json
 # dynamic_templates can be used to define the parsing
 # of concrete values to a given type + parameters, among others
 # Example: Map whole numbers to `integer` instead of `long`
@@ -2582,7 +2582,7 @@ GET /dynamic_template_test/_mapping
 
 One common use case would be to modify the way strings are mapped by default; instead of creating for a string a `text` and `keyword` field, we might want to create just a `text` field, or limit the length of the keyword with `ignore_above`.
 
-```
+```json
 # One common use case would be to modify
 # the way strings are mapped by default; 
 # instead of creating for a string a `text` and `keyword` field, 
@@ -2620,7 +2620,7 @@ For each dynamic template, we have conditions that can be specified with **`matc
 - `"match": "text_*"`: all fields with a name that matches `text_*`; we can apply regex here!
 - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`; we can apply regex here!
 
-```
+```json
 # For each dynamic template, 
 # we have conditions that can be specified 
 # with **`match` and/or `unmatch`** parameters:
@@ -2664,7 +2664,7 @@ POST /test_index/_doc
 
 Similarly, we have the **`path_match` and `path_unmatch`** parameters, which refer to the dotted field name, i.e., `field_name.subfield_name`.
 
-```
+```json
 # In the context of dynamic mapping definitions,
 # we also have the **`path_match` and `path_unmatch`** parameters,
 # which refer to the dotted field name, i.e., `field_name.subfield_name`.
@@ -2764,7 +2764,7 @@ To create a custom analyzer, we need to build an `analyzer` object and configure
 
     "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 
-```
+```json
 # Analyze the text with the standard analyzer
 # HTML characters are tokenized one by one...
 # We need to create our own analyzer...
@@ -2866,7 +2866,7 @@ A custom analyzer is a *static* setting, so we need to close the corresponding i
 
 Updating an existing analyzer requires the same calls, but at the end we need to call the `_update_by_query` API to fix Documents that were indexed with the old analyzer; otherwise, there might be inconsistencies and the search doesn't work properly.
 
-```
+```json
 # First, close the index
 # This is necessary because
 # the analyzer setting is static
@@ -2919,9 +2919,94 @@ POST /analyzer_test/_update_by_query?conflicts=proceed
 
 ## Searching for Data
 
-TBD.
+Search is performed with the API `_search`:
 
-:construction:
+    GET /index_name/_search
+
+There are 2 major ways of specifying the search we'd like:
+
+1. URI Searches: we append to the `_search` call the parameters of the search using Apache Lucene syntax (not covered in this guide):
+    ```json
+    GET /products/_search?q=name:sauvignong AND tags:wine
+    ```
+2. Query DSL: we append a JSON object which contains the search parameters; this option is covered in this guide, since it is more powerful and native to Elastic Search. However, as we see, it is more verbose and seems more complicated in the beginning:
+    ```json
+    GET /products/_search
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "name": "sauvignong"
+              }
+            },
+            {
+              "match": {
+                "tags": "wine"
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+The simplest search query is to get all Documents in an index:
+
+```json
+GET /products/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+```
+
+The following JSON is returned:
+
+```json
+{
+  "took": 59,
+  "timed_out": false,
+  "_shards": {
+    "total": 2,
+    "successful": 2,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 1001,
+      "relation": "eq"
+    },
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "products",
+        "_id": "1",
+        "_score": 1,
+        "_ignored": [
+          "description.keyword"
+        ],
+        "_source": {
+          "name": "Wine - Maipo Valle Cabernet",
+          "price": 152,
+          "in_stock": 38,
+          "sold": 47,
+          "tags": [
+            "Beverage",
+            "Alcohol",
+            "Wine"
+          ],
+          "description": "Aliquam augue quam, sollicitudin vitae, consectetuer eget, rutrum at, lorem. Integer tincidunt ante vel ipsum. Praesent blandit lacinia erat. Vestibulum sed magna at nunc commodo placerat. Praesent blandit. Nam nulla. Integer pede justo, lacinia eget, tincidunt eget, tempus vel, pede. Morbi porttitor lorem id ligula.",
+          "is_active": true,
+          "created": "2004/05/13"
+        }
+      },
+      {
+        "_index": "products",
+```
 
 ## Joining Queries
 

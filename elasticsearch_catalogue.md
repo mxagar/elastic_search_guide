@@ -1,4 +1,4 @@
-# Elastic Search: Command Catalogue
+#// Elastic Search: Command Catalogue
 
 This document compiles the most important commands of Elastic Search.
 
@@ -13,7 +13,7 @@ Table of contents:
   - [Mappings](#mappings)
 
 
-## Basic
+##// Basic
 
 ```
 GET /_cluster/health
@@ -25,7 +25,7 @@ GET /_cat/indices?v
 GET /_cat/shards?v
 ```
 
-## Manage Documents
+##// Manage Documents
 
 Contents:
 
@@ -37,15 +37,15 @@ Contents:
 - Batch/Bulk processing
 
 ```json
-### --- Create and delete indices
+###// --- Create and delete indices
 
-# Create an index
+#// Create an index
 PUT /pages
 
-# Delete an index
+#// Delete an index
 DELETE /pages
 
-# Create an index with specific properties
+#// Create an index with specific properties
 PUT /products
 {
   "settings": {
@@ -53,12 +53,12 @@ PUT /products
   }
 }
 
-### --- Create/Index, delete and get documents
+###// --- Create/Index, delete and get documents
 
-# Simple JSON Document indexed = created
-# An _id is automatically assigned if not provided
-# As we can see in the returned JSON
-# Also, we see we have 2 shards
+#// Simple JSON Document indexed = created
+#// An _id is automatically assigned if not provided
+#// As we can see in the returned JSON
+#// Also, we see we have 2 shards
 POST /products/_doc
 {
   "name": "Coffee Maker",
@@ -66,11 +66,11 @@ POST /products/_doc
   "in_stock": 10
 }
 
-# Here, we index a Document = we create one
-# but we force it to be of id 100
-# Note that the HTTP method is PUT, not POST!
-# We can use the same code
-# to replace entirely a Document
+#// Here, we index a Document = we create one
+#// but we force it to be of id 100
+#// Note that the HTTP method is PUT, not POST!
+#// We can use the same code
+#// to replace entirely a Document
 PUT /products/_doc/100
 {
   "name": "Toaster",
@@ -78,15 +78,15 @@ PUT /products/_doc/100
   "in_stock": 4
 }
 
-# Delete the document with ID 100
+#// Delete the document with ID 100
 DELETE /products/_doc/100
 
-# Retrieve Document by ID
+#// Retrieve Document by ID
 GET /products/_doc/100
 
-# Get all Documents in the index products
-# The result is a JSON in which result['hits']['hits']
-# contains a list of al Document JSONs
+#// Get all Documents in the index products
+#// The result is a JSON in which result['hits']['hits']
+#// contains a list of al Document JSONs
 GET /products/_search
 {
   "query": {
@@ -94,7 +94,7 @@ GET /products/_search
   }
 }
 
-# Delete all the documents of an index
+#// Delete all the documents of an index
 POST /products/_delete_by_query
 {
   "query": {
@@ -102,20 +102,20 @@ POST /products/_delete_by_query
   }
 }
 
-# If the index was not created and we index
-# a Document, the index will be created automatically
-# and the Document added to it
+#// If the index was not created and we index
+#// a Document, the index will be created automatically
+#// and the Document added to it
 PUT /products_test/_doc/1
 {
   "price": 7.4
 }
 
-### --- Update documents: modify fields, add fields, scripts, upsert (insert or create)
+###// --- Update documents: modify fields, add fields, scripts, upsert (insert or create)
 
-# Update an existing field
-# To update a Document, 
-# we need to pass a JSON with an object "doc"
-# The returned JSON contains "result": "updated"
+#// Update an existing field
+#// To update a Document, 
+#// we need to pass a JSON with an object "doc"
+#// The returned JSON contains "result": "updated"
 POST /products/_update/100
 {
   "doc": {
@@ -123,7 +123,7 @@ POST /products/_update/100
   }
 }
 
-# Add a new field: "tags": ["electronics"]
+#// Add a new field: "tags": ["electronics"]
 POST /products/_update/100
 {
   "doc": {
@@ -131,8 +131,8 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# Decrease by one unit the field in_stock
+#// Go to Document with ID 100
+#// Decrease by one unit the field in_stock
 POST /products/_update/100
 {
   "script": {
@@ -140,8 +140,8 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# Assign the value 10 to the field in_stock
+#// Go to Document with ID 100
+#// Assign the value 10 to the field in_stock
 POST /products/_update/100
 {
   "script": {
@@ -149,8 +149,8 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# Modify field in_stock with the values in params
+#// Go to Document with ID 100
+#// Modify field in_stock with the values in params
 POST /products/_update/100
 {
   "script": {
@@ -161,9 +161,9 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# If in_stock == 0, perform no operation
-# Else, decrease in_stock in one unit
+#// Go to Document with ID 100
+#// If in_stock == 0, perform no operation
+#// Else, decrease in_stock in one unit
 POST /products/_update/100
 {
   "script": {
@@ -177,9 +177,9 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# If in_stock < 0, delete the Document (product)
-# Else, decrease in_stock in one unit
+#// Go to Document with ID 100
+#// If in_stock < 0, delete the Document (product)
+#// Else, decrease in_stock in one unit
 POST /products/_update/100
 {
   "script": {
@@ -193,9 +193,9 @@ POST /products/_update/100
   }
 }
 
-# Upsert: Update or Insert/Create
-# If the product 101 doesn't exist, this creates it
-# Else, it increases in_stock in one unit
+#// Upsert: Update or Insert/Create
+#// If the product 101 doesn't exist, this creates it
+#// Else, it increases in_stock in one unit
 POST /products/_update/101
 {
   "script": {
@@ -208,16 +208,16 @@ POST /products/_update/101
   }
 }
 
-### --- Optimistic Concurrency Control: dealing with parallel updates
+###// --- Optimistic Concurrency Control: dealing with parallel updates
 
-# Get Document with ID 100
-# _primary_term and seq_no are in the metadata
-# We take them to formulate the conditioned update request
+#// Get Document with ID 100
+#// _primary_term and seq_no are in the metadata
+#// We take them to formulate the conditioned update request
 GET /products/_doc/100
 
-# Update Document/product with ID 100 
-# if _primary_term == 1 and seq_no == 5 (reference values obtained in previous query)
-# If _primary_term and seq_no don't match, we get an error
+#// Update Document/product with ID 100 
+#// if _primary_term == 1 and seq_no == 5 (reference values obtained in previous query)
+#// If _primary_term and seq_no don't match, we get an error
 POST /products/_update/100?if_primary_term=1&if_seq_no=5
 {
   "doc": {
@@ -225,13 +225,13 @@ POST /products/_update/100?if_primary_term=1&if_seq_no=5
   }
 }
 
-### --- Update and Delete by Query: Update/Delete a filtered set of documents
+###// --- Update and Delete by Query: Update/Delete a filtered set of documents
 
-# Update a set of filtered Documents: _update_by_query
-# Write the update in "script"
-# Write the filterin "query"
-# Errors/conflicts can occur; by default the request is aborted
-# but we can specify to proceed if we want
+#// Update a set of filtered Documents: _update_by_query
+#// Write the update in "script"
+#// Write the filterin "query"
+#// Errors/conflicts can occur; by default the request is aborted
+#// but we can specify to proceed if we want
 POST /products/_update_by_query
 {
   "conflicts": "proceed",
@@ -243,10 +243,10 @@ POST /products/_update_by_query
   }
 }
 
-# Delete all Documents that match the query
-# in this case ALL DOCUMENTS!
-# If errors/conflicts occur, the request is aborted
-# unless we specify "conflicts": "proceed"
+#// Delete all Documents that match the query
+#// in this case ALL DOCUMENTS!
+#// If errors/conflicts occur, the request is aborted
+#// unless we specify "conflicts": "proceed"
 POST /products/_delete_by_query
 {
   "conflicts": "proceed",
@@ -255,33 +255,33 @@ POST /products/_delete_by_query
   }
 }
 
-### --- Batch/Bulk processing
+###// --- Batch/Bulk processing
 
-# Create new Documents
-# We can list many (action, source) pairs
-# Always newline after a line, also in last JSON
-# Four actions: create, index, update, delete
-# Each action needs a source (the Document fields), except delete
+#// Create new Documents
+#// We can list many (action, source) pairs
+#// Always newline after a line, also in last JSON
+#// Four actions: create, index, update, delete
+#// Each action needs a source (the Document fields), except delete
 POST /_bulk
 { "index": { "_index": "products", "_id": 200 } }
 { "name": "Espresso Machine", "price": 199, "in_stock": 5 }
 { "create": { "_index": "products", "_id": 201 } }
 { "name": "Milk Frother", "price": 149, "in_stock": 14 }
 
-# Update Documents + Delete
+#// Update Documents + Delete
 POST /_bulk
 { "update": { "_index": "products", "_id": 201 } }
 { "doc": { "price": 129 } }
 { "delete": { "_index": "products", "_id": 200 } }
 
-# If all actions are for the same index,
-# we can specify it in the API commad
+#// If all actions are for the same index,
+#// we can specify it in the API commad
 POST /products/_bulk
 { "update": { "_id": 201 } }
 { "doc": { "price": 129 } }
 { "delete": { "_id": 200 } }
 
-# Get all Documents in an index
+#// Get all Documents in an index
 GET /products/_search
 {
   "query": {
@@ -291,21 +291,21 @@ GET /products/_search
 
 ```
 
-## Analyzers
+##// Analyzers
 
 ```json
-# Here a text string is analyzed
-# with the standard analyzer:
-# no char filter, standard tokenizer, lowercase token filter
+#// Here a text string is analyzed
+#// with the standard analyzer:
+#// no char filter, standard tokenizer, lowercase token filter
 POST /_analyze
 {
   "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
   "analyzer": "standard"
 }
 
-# Analyzer components explicitly defined:
-# character filer, tokenizer, token filters
-# This call produces the same results are before
+#// Analyzer components explicitly defined:
+#// character filer, tokenizer, token filters
+#// This call produces the same results are before
 POST /_analyze
 {
   "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
@@ -315,7 +315,7 @@ POST /_analyze
 }
 ```
 
-## Mappings
+##// Mappings
 
 Contents:
 
@@ -332,11 +332,11 @@ Contents:
 - Adding/Updating Analyzers to/from Existing Indices
 
 ```json
-### --- Adding explicit mappings
+###// --- Adding explicit mappings
 
-# We create a mapping for the index reviews
-# For simple types, we define their type key-value
-# For object types, we need to nest a properties key again
+#// We create a mapping for the index reviews
+#// For simple types, we define their type key-value
+#// For object types, we need to nest a properties key again
 PUT /reviews
 {
   "mappings": {
@@ -355,7 +355,7 @@ PUT /reviews
   }
 }
 
-# Now we index the first Document
+#// Now we index the first Document
 PUT /reviews/_doc/1
 {
   "rating": 5.0,
@@ -368,8 +368,8 @@ PUT /reviews/_doc/1
   }
 }
 
-# Objects can be defined flattened
-# by using object_name.field_name keys 
+#// Objects can be defined flattened
+#// by using object_name.field_name keys 
 PUT /reviews_dot_notation
 {
   "mappings": {
@@ -384,27 +384,27 @@ PUT /reviews_dot_notation
   }
 }
 
-### --- Retrieving mappings
+###// --- Retrieving mappings
 
-# Retrieving mappings for the `reviews` index
+#// Retrieving mappings for the `reviews` index
 GET /reviews/_mapping
 
-# Retrieving mapping for the `content` field
+#// Retrieving mapping for the `content` field
 GET /reviews/_mapping/field/content
 
-# Retrieving mapping for the `author.email` field
-# using dot-notation
+#// Retrieving mapping for the `author.email` field
+#// using dot-notation
 GET /reviews/_mapping/field/author.email
 
-### --- Extending mappings to existing indices: adding new fields
+###// --- Extending mappings to existing indices: adding new fields
 
-# Here, we have an Index reviews
-# and we add a new field to it: 
-# "created_at": { "type": "date" }
-# However, it is usually not possible to change/modify 
-# existing mappings or their fields. 
-# The alternative is to create new mappings 
-# and `_reindex` the old index to the new one.
+#// Here, we have an Index reviews
+#// and we add a new field to it: 
+#// "created_at": { "type": "date" }
+#// However, it is usually not possible to change/modify 
+#// existing mappings or their fields. 
+#// The alternative is to create new mappings 
+#// and `_reindex` the old index to the new one.
 PUT /reviews/_mapping
 {
   "properties": {
@@ -414,10 +414,10 @@ PUT /reviews/_mapping
   }
 }
 
-### --- Dates
+###// --- Dates
 
-# Supplying only a date: "yyyy-mm-dd"
-# It will be converted and stored as milliseconds since epoch
+#// Supplying only a date: "yyyy-mm-dd"
+#// It will be converted and stored as milliseconds since epoch
 PUT /reviews/_doc/2
 {
   "rating": 4.5,
@@ -431,11 +431,11 @@ PUT /reviews/_doc/2
   }
 }
 
-# Supplying both a date and time: "yyyy-mm-ddThh:mm:ss"
-# It will be converted and stored as milliseconds since epoch
-# ISO 8601 must be used: 
-# - time separated with T
-# - Z for UTC time zone, no offset (Greenwich), or offset as "+hh:mm"
+#// Supplying both a date and time: "yyyy-mm-ddThh:mm:ss"
+#// It will be converted and stored as milliseconds since epoch
+#// ISO 8601 must be used: 
+#// - time separated with T
+#// - Z for UTC time zone, no offset (Greenwich), or offset as "+hh:mm"
 PUT /reviews/_doc/3
 {
   "rating": 3.5,
@@ -449,8 +449,8 @@ PUT /reviews/_doc/3
   }
 }
 
-# Specifying the UTC offset
-# "yyyy-mm-ddThh:mm:ss++hh:mm"
+#// Specifying the UTC offset
+#// "yyyy-mm-ddThh:mm:ss++hh:mm"
 PUT /reviews/_doc/4
 {
   "rating": 5.0,
@@ -464,8 +464,8 @@ PUT /reviews/_doc/4
   }
 }
 
-# Supplying a timestamp (milliseconds since the epoch)
-# Equivalent to 2015-07-04T12:01:24Z
+#// Supplying a timestamp (milliseconds since the epoch)
+#// Equivalent to 2015-07-04T12:01:24Z
 PUT /reviews/_doc/5
 {
   "rating": 4.5,
@@ -479,21 +479,21 @@ PUT /reviews/_doc/5
   }
 }
 
-### --- Reindexing: creating new indices because we want to change a field
+###// --- Reindexing: creating new indices because we want to change a field
 
-# First, we get the mapping of an index
-# We copy the output to paste it in the
-# next command, which creates a new index
+#// First, we get the mapping of an index
+#// We copy the output to paste it in the
+#// next command, which creates a new index
 GET /reviews/_mappings
 
-# This is the new index
-# We paste the mapping obtained before
-# and change the field(s) we want:
-# "product_id": {"type": "integer"} -> {"type": "keyword"}
-# PUT /reviews_new
-# {
-#   ... paste the mappings content here
-# }
+#// This is the new index
+#// We paste the mapping obtained before
+#// and change the field(s) we want:
+#// "product_id": {"type": "integer"} -> {"type": "keyword"}
+#// PUT /reviews_new
+#// {
+#//   ... paste the mappings content here
+#// }
 PUT /reviews_new
 {
   "mappings" : {
@@ -528,13 +528,13 @@ PUT /reviews_new
   }
 }
 
-# After the new index is created
-# we add documents to it by reindexing
-# from the old index.
-# Re-indexing is much cheaper than indexing
-# the documents anew!
-# We specify in the source and dest
-# the old and the new indices, respectively
+#// After the new index is created
+#// we add documents to it by reindexing
+#// from the old index.
+#// Re-indexing is much cheaper than indexing
+#// the documents anew!
+#// We specify in the source and dest
+#// the old and the new indices, respectively
 POST /_reindex
 {
   "source": {
@@ -544,9 +544,9 @@ POST /_reindex
     "index": "reviews_new"
   }
 }
-# However, this does not change the _source objects
-# That is not a problem, but if we want
-# to be consistent, we can add a script
+#// However, this does not change the _source objects
+#// That is not a problem, but if we want
+#// to be consistent, we can add a script
 POST /_reindex
 {
   "source": {
@@ -564,7 +564,7 @@ POST /_reindex
   }
 }
 
-# Check that everything run ok
+#// Check that everything run ok
 GET /reviews_new/_search
 {
   "query": {
@@ -572,13 +572,13 @@ GET /reviews_new/_search
   }
 }
 
-# We can also reindex only a subset
-# of the documents.
-# To that end, we need to change the match_all
-# query by a more specific one,
-# e.g., in this example, only
-# reviews greater than 4.0
-# are reindexed
+#// We can also reindex only a subset
+#// of the documents.
+#// To that end, we need to change the match_all
+#// query by a more specific one,
+#// e.g., in this example, only
+#// reviews greater than 4.0
+#// are reindexed
 POST /_reindex
 {
   "source": {
@@ -596,10 +596,10 @@ POST /_reindex
   }
 }
 
-# To remove fields when reindexing
-# we apply source-filtering,
-# i.e., we specify the fields from _source
-# that we want to copy -- the rest is ignored!
+#// To remove fields when reindexing
+#// we apply source-filtering,
+#// i.e., we specify the fields from _source
+#// that we want to copy -- the rest is ignored!
 POST /_reindex
 {
   "source": {
@@ -611,9 +611,9 @@ POST /_reindex
   }
 }
 
-# Renaming field names during reindexing
-# However, reindexing to rename a field
-# is a bed idea -- instead, use field aliases!
+#// Renaming field names during reindexing
+#// However, reindexing to rename a field
+#// is a bed idea -- instead, use field aliases!
 POST /_reindex
 {
   "source": {
@@ -624,14 +624,14 @@ POST /_reindex
   },
   "script": {
     "source": """
-      # Rename "content" field to "comment"
+      #// Rename "content" field to "comment"
       ctx._source.comment = ctx._source.remove("content");
     """
   }
 }
 
-# Ignore reviews with ratings below 4.0
-# However, it is better in general to use a query
+#// Ignore reviews with ratings below 4.0
+#// However, it is better in general to use a query
 POST /_reindex
 {
   "source": {
@@ -643,21 +643,21 @@ POST /_reindex
   "script": {
     "source": """
       if (ctx._source.rating < 4.0) {
-        ctx.op = "noop"; # Can also be set to "delete"
+        ctx.op = "noop"; #// Can also be set to "delete"
       }
     """
   }
 }
 
-### --- Field Aliases
+###// --- Field Aliases
 
-# Reindexing to rename a field is a bed idea;
-# instead, we can use field aliases.
-# Here, we
-# add `comment` alias pointing to the `content` field,
-# so content is an alias of comment.
-# Alias fields can be used as regular fields
-# and the original fields are unaffected
+#// Reindexing to rename a field is a bed idea;
+#// instead, we can use field aliases.
+#// Here, we
+#// add `comment` alias pointing to the `content` field,
+#// so content is an alias of comment.
+#// Alias fields can be used as regular fields
+#// and the original fields are unaffected
 PUT /reviews/_mapping
 {
   "properties": {
@@ -668,17 +668,17 @@ PUT /reviews/_mapping
   }
 }
 
-### --- Muilti-field mappings
+###// --- Muilti-field mappings
 
-# The most common multi-field mapping
-# is the one where a field is both text and keyword.
-# To that end:
-# We add `keyword` mapping to a `text` field
-# This effectively creates an additional index:
-# ingredients.keyword
-# In contrast to the ingredients field,
-# which allows non-exact term search
-# the new (sub-)field allows exact search
+#// The most common multi-field mapping
+#// is the one where a field is both text and keyword.
+#// To that end:
+#// We add `keyword` mapping to a `text` field
+#// This effectively creates an additional index:
+#// ingredients.keyword
+#// In contrast to the ingredients field,
+#// which allows non-exact term search
+#// the new (sub-)field allows exact search
 PUT /multi_field_test
 {
   "mappings": {
@@ -698,9 +698,9 @@ PUT /multi_field_test
   }
 }
 
-# Querying the `text` mapping
-# (non-exact match/search)
-# (assuming multi_field_test has been filled)
+#// Querying the `text` mapping
+#// (non-exact match/search)
+#// (assuming multi_field_test has been filled)
 GET /multi_field_test/_search
 {
   "query": {
@@ -710,14 +710,14 @@ GET /multi_field_test/_search
   }
 }
 
-# Querying the `keyword` mapping (exact match)
-# (assuming multi_field_test has been filled)
-# A new index `ingredients.keyword` has been created
-# apart from `ingredients`, and here we search
-# for exactly matching keywords in `ingredients.keyword`
-# Thus, multi-fields allow different search types
-# but bear in mind that in reality multiple indices
-# are created under the hood
+#// Querying the `keyword` mapping (exact match)
+#// (assuming multi_field_test has been filled)
+#// A new index `ingredients.keyword` has been created
+#// apart from `ingredients`, and here we search
+#// for exactly matching keywords in `ingredients.keyword`
+#// Thus, multi-fields allow different search types
+#// but bear in mind that in reality multiple indices
+#// are created under the hood
 GET /multi_field_test/_search
 {
   "query": {
@@ -727,11 +727,11 @@ GET /multi_field_test/_search
   }
 }
 
-### --- Index Templates
+###// --- Index Templates
 
-# We can create a reusable index template
-# by specifying its settings and mappings
-# Example index template: access-logs-*
+#// We can create a reusable index template
+#// by specifying its settings and mappings
+#// Example index template: access-logs-*
 PUT /_index_template/access-logs
 {
   "index_patterns": ["access-logs-*"],
@@ -762,10 +762,10 @@ PUT /_index_template/access-logs
   }
 }
 
-# Then, we add a doc to a non-existing index
-# but whose template is already created (above)
-# - Index access-logs-2023-01 will be created automatically
-# - doc will be indexed
+#// Then, we add a doc to a non-existing index
+#// but whose template is already created (above)
+#// - Index access-logs-2023-01 will be created automatically
+#// - doc will be indexed
 POST /access-logs-2023-01/_doc
 {
   "@timestamp": "2023-01-01T00:00:00Z",
@@ -785,9 +785,9 @@ POST /access-logs-2023-01/_doc
   "user_agent.os.version": "12.1.0"
 }
 
-# We can also manually create an index when a template exists
-# and can even extend the definition of the template,
-# e.g., by adding a new field - here, url.query (keyword) is added
+#// We can also manually create an index when a template exists
+#// and can even extend the definition of the template,
+#// e.g., by adding a new field - here, url.query (keyword) is added
 PUT /access-logs-2023-02
 {
   "settings": {
@@ -802,23 +802,23 @@ PUT /access-logs-2023-02
   }
 }
 
-# Get/retrieve an index
+#// Get/retrieve an index
 GET /access-logs-2023-01
 GET /access-logs-2023-02
 
-# Retrieving an index template
+#// Retrieving an index template
 GET /_index_template/access-logs
 
-# Deleting an index template
+#// Deleting an index template
 DELETE /_index_template/access-logs
 
-### --- Configuring Dynamic Mappings
+###// --- Configuring Dynamic Mappings
 
-# Disable dynamic mapping ("dynamic": false)
-# New fields are ignored, if we try to insert them
-# but still continue being part of _source
-# Remember _source is not part of the search
-# data structures.
+#// Disable dynamic mapping ("dynamic": false)
+#// New fields are ignored, if we try to insert them
+#// but still continue being part of _source
+#// Remember _source is not part of the search
+#// data structures.
 PUT /people
 {
   "mappings": {
@@ -831,8 +831,8 @@ PUT /people
   }
 }
 
-# Disable strictly dynamic mapping ("dynamic": "strict"),
-# i.e., if we try to insert new fields an error occurs.
+#// Disable strictly dynamic mapping ("dynamic": "strict"),
+#// i.e., if we try to insert new fields an error occurs.
 PUT /people
 {
   "mappings": {
@@ -845,11 +845,11 @@ PUT /people
   }
 }
 
-# The dynamic setting is inherited to all the fields in
-# the mapping, but we can overwrite it in any field.
-# Here other is an object an we set "dynamic": true,
-# so we can extend it, even though we cannot extend 
-# the index outside from other, because it's set to "dynamic": "strict"!
+#// The dynamic setting is inherited to all the fields in
+#// the mapping, but we can overwrite it in any field.
+#// Here other is an object an we set "dynamic": true,
+#// so we can extend it, even though we cannot extend 
+#// the index outside from other, because it's set to "dynamic": "strict"!
 PUT /computers
 {
   "mappings": {
@@ -877,43 +877,43 @@ PUT /computers
   }
 }
 
-# We can set "numeric_detection": true
-# So that new fields will be forced to be
-# numbers if possible, 
-# even when they are input as text
+#// We can set "numeric_detection": true
+#// So that new fields will be forced to be
+#// numbers if possible, 
+#// even when they are input as text
 PUT /computers
 {
   "mappings": {
     "numeric_detection": true
   }
 }
-# New string fields are indexed
-# as numbers, because it's possible
-# and "numeric_detection": true
+#// New string fields are indexed
+#// as numbers, because it's possible
+#// and "numeric_detection": true
 POST /computers/_doc
 {
   "specifications": {
     "other": {
-      "max_ram_gb": "32", # long
-      "bluetooth": "5.2" # float
+      "max_ram_gb": "32", #// long
+      "bluetooth": "5.2" #// float
     }
   }
 }
 
-### --- Dynamic Templates
+###// --- Dynamic Templates
 
-# dynamic_templates can be used to define the parsing
-# of concrete values to a given type + parameters, among others
-# Example: Map whole numbers to `integer` instead of `long`
+#// dynamic_templates can be used to define the parsing
+#// of concrete values to a given type + parameters, among others
+#// Example: Map whole numbers to `integer` instead of `long`
 PUT /dynamic_template_test
 {
   "mappings": {
     "dynamic_templates": [
       {
         "integers": {
-          "match_mapping_type": "long", # every JSON field with a whole number...
+          "match_mapping_type": "long", #// every JSON field with a whole number...
           "mapping": {
-            "type": "integer" # ... will be parsed as integer
+            "type": "integer" #// ... will be parsed as integer
           }
         }
       }
@@ -921,15 +921,15 @@ PUT /dynamic_template_test
   }
 }
 
-# One common use case would be to modify
-# the way strings are mapped by default; 
-# instead of creating for a string a `text` and `keyword` field, 
-# we might want to create just a `text` field,
-# or limit the length of the keyword with `ignore_above`.
-# In the example, we modify default mapping for strings:
-# We set `ignore_above` to 512,
-# so all strings will get a text field and a keyword field
-# but the maximum length of the keyword will be 512
+#// One common use case would be to modify
+#// the way strings are mapped by default; 
+#// instead of creating for a string a `text` and `keyword` field, 
+#// we might want to create just a `text` field,
+#// or limit the length of the keyword with `ignore_above`.
+#// In the example, we modify default mapping for strings:
+#// We set `ignore_above` to 512,
+#// so all strings will get a text field and a keyword field
+#// but the maximum length of the keyword will be 512
 PUT /test_index
 {
   "mappings": {
@@ -952,13 +952,13 @@ PUT /test_index
   }
 }
 
-# For each dynamic template, 
-# we have conditions that can be specified 
-# with **`match` and/or `unmatch`** parameters:
-# - `"match": "text_*"`: all fields with a name that matches `text_*`;
-# we can apply regex here!
-# - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`;
-# we can apply regex here!
+#// For each dynamic template, 
+#// we have conditions that can be specified 
+#// with **`match` and/or `unmatch`** parameters:
+#// - `"match": "text_*"`: all fields with a name that matches `text_*`;
+#// we can apply regex here!
+#// - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`;
+#// we can apply regex here!
 PUT /test_index
 {
   "mappings": {
@@ -988,13 +988,13 @@ PUT /test_index
 
 POST /test_index/_doc
 {
-  "text_product_description": "A description.", # first template is matched -> type: text
-  "text_product_id_keyword": "ABC-123" # second template is matched -> type: keyword
+  "text_product_description": "A description.", #// first template is matched -> type: text
+  "text_product_id_keyword": "ABC-123" #// second template is matched -> type: keyword
 }
 
-# In the context of dynamic mapping definitions,
-# we also have the **`path_match` and `path_unmatch`** parameters,
-# which refer to the dotted field name, i.e., `field_name.subfield_name`.
+#// In the context of dynamic mapping definitions,
+#// we also have the **`path_match` and `path_unmatch`** parameters,
+#// which refer to the dotted field name, i.e., `field_name.subfield_name`.
 PUT /test_index
 {
   "mappings": {
@@ -1024,23 +1024,23 @@ POST /test_index/_doc
   }
 }
 
-### --- Custom analyzers
+###// --- Custom analyzers
 
-# Analyze the text with the standard analyzer
-# HTML characters are tokenized one by one...
-# We need to create our own analyzer...
+#// Analyze the text with the standard analyzer
+#// HTML characters are tokenized one by one...
+#// We need to create our own analyzer...
 POST /_analyze
 {
   "analyzer": "standard",
   "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 }
 
-# Creation of a custom analyzer
-# able to process a text with HTML tags
-# and handle special characters
-# Note that we create it within an index: analyzer_test
-# In other words, it is created when creting the index.
-# It can be added later too, though, as shown below.
+#// Creation of a custom analyzer
+#// able to process a text with HTML tags
+#// and handle special characters
+#// Note that we create it within an index: analyzer_test
+#// In other words, it is created when creting the index.
+#// It can be added later too, though, as shown below.
 PUT /analyzer_test
 {
   "settings": {
@@ -1052,8 +1052,8 @@ PUT /analyzer_test
           "tokenizer": "standard",
           "filter": [
             "lowercase",
-            "stop",           # remove stop words
-            "asciifolding"    # convert special symbols to ASCII equivalent
+            "stop",           #// remove stop words
+            "asciifolding"    #// convert special symbols to ASCII equivalent
           ]
         }
       }
@@ -1061,32 +1061,32 @@ PUT /analyzer_test
   }
 }
 
-# Analyze the text with the custom analyzer
-# Note that we need to run it within the index
-# where it was defined
+#// Analyze the text with the custom analyzer
+#// Note that we need to run it within the index
+#// where it was defined
 POST /analyzer_test/_analyze
 {
   "analyzer": "standard",
   "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 }
 
-### --- Adding/Updating Analyzers to/from Existing Indices
+###// --- Adding/Updating Analyzers to/from Existing Indices
 
-# First, close the index
-# This is necessary because
-# the analyzer setting is static
-# not dynamic, i.e., we need to
-# stop any operations in the index
-# before we change it
+#// First, close the index
+#// This is necessary because
+#// the analyzer setting is static
+#// not dynamic, i.e., we need to
+#// stop any operations in the index
+#// before we change it
 POST /analyzer_test/_close
 
-# Then, create/add a custom analyzer
-# The syntax is the same as when
-# we create and configure an index
-# with a custom analyzer
-# Updating and existing one is done also with
-# the same call, but we additionally need to
-# call the _update_by_query API, shown below
+#// Then, create/add a custom analyzer
+#// The syntax is the same as when
+#// we create and configure an index
+#// with a custom analyzer
+#// Updating and existing one is done also with
+#// the same call, but we additionally need to
+#// call the _update_by_query API, shown below
 PUT /analyzer_test/_settings
 {
   "analysis": {
@@ -1105,17 +1105,17 @@ PUT /analyzer_test/_settings
   }
 }
 
-# Re-Open the index again
-# If an index is closed, no queries are accepted
-# no indexing of Documents can happen
+#// Re-Open the index again
+#// If an index is closed, no queries are accepted
+#// no indexing of Documents can happen
 POST /analyzer_test/_open
 
-# If we have updated the analyzer,
-# and not created a new one,
-# we need to update the Documents
-# to be processed by the new analyzer,
-# otherwise the indexed values are inconsistent.
-# This call re-indexes all Documents again.
+#// If we have updated the analyzer,
+#// and not created a new one,
+#// we need to update the Documents
+#// to be processed by the new analyzer,
+#// otherwise the indexed values are inconsistent.
+#// This call re-indexes all Documents again.
 POST /analyzer_test/_update_by_query?conflicts=proceed
 
 ```

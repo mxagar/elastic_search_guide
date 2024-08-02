@@ -1,4 +1,4 @@
-# Elastic Search Guide
+#// Elastic Search Guide
 
 This are my notes on **ElasticSearch** and **search methods** with focus on Machine Learning.
 
@@ -98,7 +98,7 @@ Table of contents:
   - [License](#license)
 
 
-## Introduction
+##// Introduction
 
 [Elastic Search](https://www.elastic.co/) is an open source analytics and full-text search engine.
 
@@ -133,7 +133,7 @@ Some other properties:
 - Used by many large companies: FB, Netflix, etc.
 - Queries can be done using Query DSL
 
-### Elastic Stack
+###// Elastic Stack
 
 Elastic has built several products which can interact with each other:
 
@@ -150,7 +150,7 @@ Elastic has built several products which can interact with each other:
 
 ![Elastic Stack](./assets/elastic_stack.png)
 
-### Common Application Architecture
+###// Common Application Architecture
 
 Let's consider an e-commerce site, where users can buy things via a web store/page. We have these components:
 
@@ -186,9 +186,9 @@ Thus, it makes sense to add **Logstash** to the architecture, which enables log/
 Our database and ES should be synchronized. However, ideally, our application should have read permissions in ES. How is that possible?
 -->
 
-## Getting Started: Setting Up Elastic Search and Kibana
+##// Getting Started: Setting Up Elastic Search and Kibana
 
-### Setup
+###// Setup
 
 There are many options to install Elastic Search and Kibana:
 
@@ -199,7 +199,7 @@ There are many options to install Elastic Search and Kibana:
 
 Usually, we want to have an ES cluster on the cloud for scalability; it can be a self-managed ES cluster, not necessarily the Elastic Cloud solution.
 
-#### Elastic Cloud
+####// Elastic Cloud
 
 Elastic Cloud has everything set up and running for us: [https://cloud.elastic.co](https://cloud.elastic.co). There's a free trial for 14 days since the moment we create the cluster; after the 14 days the cluster is shut down.
 
@@ -213,7 +213,7 @@ We can leave everything with the default options:
 - In the new version some other variables are shown: `Elasticsearch endpoint`, `Cloud ID`.
 - I copied everything to the non-committed/pushed file `elastic_cloud.txt`.
 
-#### Windows
+####// Windows
 
 Full, official guide: [Install Elasticsearch with .zip on Windows](https://www.elastic.co/guide/en/elasticsearch/reference/current/zip-windows.html).
 
@@ -231,10 +231,10 @@ To set them up:
 - Go to the extracted directory and start `elasticsearch`.
 
 ```powershell
-# Elastic Search: go to extracted directory and run binary
+#// Elastic Search: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 bin\elasticsearch.bat
-# Unix: bin/elasticsearch
+#// Unix: bin/elasticsearch
 ```
 
 :warning: **IMPORTANT**: save the ZIP archive, since we need to extract it every time we want a new node!
@@ -256,10 +256,10 @@ When we run `bin\elasticsearch.bat` for the first time a **cluster is created** 
 When the ES cluster is up and running, we launch Kibana:
 
 ```powershell
-# Kibana: go to extracted directory and run binary
+#// Kibana: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\kibana-8.14.3
 bin\kibana.bat
-# Unix: bin/kibana
+#// Unix: bin/kibana
 ```
 
 After a short moment, Kibaba is ready at port `5601`:
@@ -279,7 +279,7 @@ elasticsearch.hosts: ["https://localhost:9200"]
 
 ![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
 
-#### Unix: Mac OSX, Linux
+####// Unix: Mac OSX, Linux
 
 Full, official guide: [Install Elasticsearch from archive on Linux or MacOS](https://www.elastic.co/guide/en/elasticsearch/reference/current/targz.html).
 
@@ -291,46 +291,46 @@ In the case of MacOS, we need to deactivate the Gatekeeper to be able to run Kib
 cd .../path/where/kibana/directory/is
 xattr -d -r com.apple.quarantine kibana-8.14.3
 
-# Then, we start Kibana
+#// Then, we start Kibana
 cd kibana-8.14.3
 bin/kibana
 ```
 
-#### Docker
+####// Docker
 
 Full, official guide: [Install Elasticsearch with Docker](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html).
 
-#### Summary: How to Start Elastic Search
+####// Summary: How to Start Elastic Search
 
 ```powershell
-## -- Terminal 1
-# Elastic Search: go to extracted directory and run binary
+##// -- Terminal 1
+#// Elastic Search: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 bin\elasticsearch.bat
-# Unix: bin/elasticsearch
-# Wait until cluster up & running: "... current.health="GREEN"..."
-# If provided, copy to .env
-# - ELASTIC_USER
-# - ELASIC_PASSWORD
-# - ELASTIC_FINGERPRINT
-# - ELASTIC_ENROLLMENT_TOKEN
-# To get new ELASTIC_ENROLLMENT_TOKEN
-# bin/elasticsearch-create-enrollment-token.bat -s kibana
-# Also, after first time, add to .../kibana-8.14.3/config/kibana.yaml:
-# elasticsearch.hosts: ["https://localhost:9200"]
+#// Unix: bin/elasticsearch
+#// Wait until cluster up & running: "... current.health="GREEN"..."
+#// If provided, copy to .env
+#// - ELASTIC_USER
+#// - ELASIC_PASSWORD
+#// - ELASTIC_FINGERPRINT
+#// - ELASTIC_ENROLLMENT_TOKEN
+#// To get new ELASTIC_ENROLLMENT_TOKEN
+#// bin/elasticsearch-create-enrollment-token.bat -s kibana
+#// Also, after first time, add to .../kibana-8.14.3/config/kibana.yaml:
+#// elasticsearch.hosts: ["https://localhost:9200"]
 
-## -- Terminal 2
-# Kibana: go to extracted directory and run binary
+##// -- Terminal 2
+#// Kibana: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\kibana-8.14.3
 bin\kibana.bat
-# Unix: bin/kibana
-# Kibana Web UI: http://localhost:5601
-# NOTE: It takes some minutes until Kibana is available...
-# Use ELASTIC_USER & ELASIC_PASSWORD as credentials
+#// Unix: bin/kibana
+#// Kibana Web UI: http://localhost:5601
+#// NOTE: It takes some minutes until Kibana is available...
+#// Use ELASTIC_USER & ELASIC_PASSWORD as credentials
 
-## -- Browser
-# Kibana Web UI: http://localhost:5601
-# Elastic Search API: https://localhost:9200
+##// -- Browser
+#// Kibana Web UI: http://localhost:5601
+#// Elastic Search API: https://localhost:9200
 ```
 
 Troublesooting: If we get an error, make sure that `.../kibana-8.14.3/config/kibana.yaml` contains the line
@@ -342,21 +342,21 @@ elasticsearch.hosts: ["https://localhost:9200"]
 And, additionally, check:
 
 ```powershell
-# Set variables in Powershell for easier and more secure use.
-# To use them: $Env:ELASTIC_USER
+#// Set variables in Powershell for easier and more secure use.
+#// To use them: $Env:ELASTIC_USER
 $Env:ELASTIC_USER = "elastic"
 $Env:ELASTIC_PASSWORD = "..."
-# Bash. To use them: $ELASTIC_USER
+#// Bash. To use them: $ELASTIC_USER
 export ELASTIC_USER="elastic"
 export ELASTIC_PASSWORD="..."
 
-# Example: Basic query to get general cluster info
+#// Example: Basic query to get general cluster info
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200 --noproxy localhost
 
 ```
 
-### Basic Architecture: Cluster, Nodes, Documents, Indices
+###// Basic Architecture: Cluster, Nodes, Documents, Indices
 
 Elastic Search is distirbuted and it consists of **nodes** within a **cluster**:
 
@@ -389,7 +389,7 @@ Documents are stored in **Indices**:
 
 ![Indices](./assets/indices.png)
 
-### Inspecting a Cluster with the Console
+###// Inspecting a Cluster with the Console
 
 ![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
 
@@ -424,7 +424,7 @@ The query structure is
 For instance:
 
 ```bash
-# Get cluster health: _cluster API, health Command
+#// Get cluster health: _cluster API, health Command
 GET /_cluster/health
 ```
 
@@ -453,18 +453,18 @@ When we run that command (play button), we get back a `JSON`:
 Further examples:
 
 ```bash
-# List all nodes: _cat API (Compact Aligned Text), nodes Command, v Query (verbose)
-# In our case we see a single node and its IP + properties
+#// List all nodes: _cat API (Compact Aligned Text), nodes Command, v Query (verbose)
+#// In our case we see a single node and its IP + properties
 GET /_cat/nodes?v
 
-# List indices
-# We only have system indices, leading with a .
+#// List indices
+#// We only have system indices, leading with a .
 GET /_cat/indices?v
 ```
 
 ![Console](./assets/console.png)
 
-### Interacting with the Cluster via cURL and Python
+###// Interacting with the Cluster via cURL and Python
 
 We can interact with ES using its REST API, e.g., via `cURL`. We need to:
 
@@ -473,39 +473,39 @@ We can interact with ES using its REST API, e.g., via `cURL`. We need to:
 - use our user and PW credentials.
 
 ```powershell
-# General structure
+#// General structure
 cd /path/to/elasticsearch
 curl --cacert config/certs/http_ca.crt -u elastic:<YOUR_PASSWORD_HERE> [--insecure] -X <HTTP_METHOD> [-H ...] [-d ...] <URL+API+Command+Query>
-# NOTE: Sometimes the certificate doesn't work,
-# so we can add the flag --insecure.
-# This bypasses the SSL certificate verification.
-# That should not be done in production!
-# The option -H is a header, often used with -d
-# and -d is the data we send.
-# Example (Windows needs to escape "):
-# ... -H "Content-Type: application/json" -d '{"name":"John", "age":30}'
-# ... -H "Content-Type: application/json" -d '{\"name\":\"John\", \"age\":30}'
+#// NOTE: Sometimes the certificate doesn't work,
+#// so we can add the flag --insecure.
+#// This bypasses the SSL certificate verification.
+#// That should not be done in production!
+#// The option -H is a header, often used with -d
+#// and -d is the data we send.
+#// Example (Windows needs to escape "):
+#// ... -H "Content-Type: application/json" -d '{"name":"John", "age":30}'
+#// ... -H "Content-Type: application/json" -d '{\"name\":\"John\", \"age\":30}'
 
-# Set variables in Powershell for easier and more secure use.
-# To use them: $Env:ELASTIC_USER
+#// Set variables in Powershell for easier and more secure use.
+#// To use them: $Env:ELASTIC_USER
 $Env:ELASTIC_USER = "elastic"
 $Env:ELASTIC_PASSWORD = "..."
-# Bash. To use them: $ELASTIC_USER
+#// Bash. To use them: $ELASTIC_USER
 export ELASTIC_USER="elastic"
 export ELASTIC_PASSWORD="..."
 
-# Example: Basic query to get general cluster info
+#// Example: Basic query to get general cluster info
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200 --noproxy localhost
 
-# Example: Get the index products (not created yet)
+#// Example: Get the index products (not created yet)
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET -H "Content-Type: application/json" -d '{ \"query\": { \"match_all\": {} } }' https://localhost:9200/products/_search --noproxy localhost
-# Bash: -d '{ "query": { "match_all": {} } }'
+#// Bash: -d '{ "query": { "match_all": {} } }'
 
-# Example: GET /_cat/nodes?v -> get all nodes
+#// Example: GET /_cat/nodes?v -> get all nodes
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/nodes?v" --noproxy localhost
 
-# Example: GET /_cat/indices?v -> list all indices
+#// Example: GET /_cat/indices?v -> list all indices
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/indices?v" --noproxy localhost
 ```
 
@@ -523,68 +523,68 @@ load_dotenv()
 elastic_user = os.getenv("ELASTIC_USER")
 elastic_password = os.getenv("ELASIC_PASSWORD")
 
-### -- requests
+###// -- requests
 
-# Define the URL
+#// Define the URL
 url = "https://localhost:9200/_cat/nodes?v"
 
-# Make the GET request
+#// Make the GET request
 response = requests.get(
     url,
     auth=HTTPBasicAuth(elastic_user, elastic_password),
-    #verify=False,  # Disable SSL verification
+    #verify=False,  #// Disable SSL verification
     verify="C:\\Users\\msagardia\\packages\\elasticsearch-8.14.3\\config\\certs\\http_ca.crt",
-    proxies={"http": None, "https": None}  # Bypass proxy
+    proxies={"http": None, "https": None}  #// Bypass proxy
 )
 
-# Print the response
+#// Print the response
 print(response.text)
 
-# Define the URL
+#// Define the URL
 url = "https://localhost:9200/_cat/indices?v"
 
-# Make the GET request
+#// Make the GET request
 response = requests.get(
     url,
     auth=HTTPBasicAuth(elastic_user, elastic_password),
-    #verify=False,  # Disable SSL verification
+    #verify=False,  #// Disable SSL verification
     verify="C:\\Users\\msagardia\\packages\\elasticsearch-8.14.3\\config\\certs\\http_ca.crt",
-    proxies={"http": None, "https": None}  # Bypass proxy
+    proxies={"http": None, "https": None}  #// Bypass proxy
 )
 
-# Print the response
+#// Print the response
 print(response.text)
 
-### -- elasticsearch
+###// -- elasticsearch
 
 import warnings
 from urllib3.exceptions import InsecureRequestWarning
 from elasticsearch import Elasticsearch
 
-# Suppress only the specific InsecureRequestWarning
+#// Suppress only the specific InsecureRequestWarning
 warnings.simplefilter('ignore', InsecureRequestWarning)
 
-# Create an instance of the Elasticsearch client
+#// Create an instance of the Elasticsearch client
 es = Elasticsearch(
     ['https://localhost:9200'],
     basic_auth=(elastic_user, elastic_password),
-    verify_certs=False  # This disables SSL verification, similar to --insecure
+    verify_certs=False  #// This disables SSL verification, similar to --insecure
 )
 
-# Make a GET request to /_cat/nodes?v
+#// Make a GET request to /_cat/nodes?v
 response = es.cat.nodes(format="json")
 
-# Print the response
+#// Print the response
 print(response)
 
-# Make a GET request to /_cat/indices?v
+#// Make a GET request to /_cat/indices?v
 response = es.cat.indices(format="json")
 
-# Print the response
+#// Print the response
 print(response)
 ```
 
-### Building an Index
+###// Building an Index
 
 This is my understanding of how an index works. The key idea is that we'd like to be able to search very quickly our documents.
 
@@ -601,7 +601,7 @@ On the other side we build the following structures:
 
 In the following, I explain my intuitions of each of them.
 
-#### Inverted Index
+####// Inverted Index
 
 An inverted index is a table which maps terms with document ids, positions and frequencies. A possible data structure for that would by a hash table (like a Python dictionary).
 
@@ -640,7 +640,7 @@ See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a s
 
 ![Inverted Index](./assets/inverted_index.png)
 
-#### B-Tree
+####// B-Tree
 
 A B-tree is a self-balancing tree data structure that maintains sorted data and allows for efficient insertion, deletion, and search operations. It is commonly used in databases and file systems. Key features:
 
@@ -707,7 +707,7 @@ In the previous list of Documents:
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
 
-#### BKD Tree, Block KD-tree
+####// BKD Tree, Block KD-tree
 
 A BKD tree (Block KD-tree) is a variant of the k-d tree (k-dimensional tree) optimized for indexing multi-dimensional data. It is particularly used in systems like Elasticsearch and Apache Lucene for efficient range searches and nearest neighbor queries in high-dimensional spaces.
 
@@ -726,7 +726,7 @@ Use Cases:
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation of a KD-tree and comparison to brute-force nearest vector search with numpy.
 
-#### Doc Values
+####// Doc Values
 
 Doc Values are columnar data of numerical fields. Columnar data is stored as an array, i.e., the values are contiguous in memory. That enables much faster operations in the entire field/column, such as sorting or aggregation operations, like average computation.
 
@@ -744,7 +744,7 @@ Then, if we want to compute the min/max, mean or similar values of a field/colum
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
 
-### Sharding and Scalability
+###// Sharding and Scalability
 
 If our node is full, we can create a new one which will increase the storage capacity of the cluster. In the process, **Sharding** is used:
 
@@ -777,7 +777,7 @@ Note: when we create an index, we define a number of primar shards and keep it f
 
 Good rule of thumb: if we're going to have millions of documents, use a couple of shards. That number 5 was the default in the older versions.
 
-### Replication and Snapshots
+###// Replication and Snapshots
 
 Sometimes node fail; a way to enable fault-tolerance is to replicate shards. Elastic Search replicates shards by default: shards are copied, creating replica shards:
 
@@ -797,7 +797,7 @@ In addition to replication, Elastic Search also allows to take snapshots and bac
 - Snapshots can be taken at index level or for the entire cluster.
 - Snapshots are state dumps to a file; those files can be used to restore the cluster, if something goes wrong.
 
-#### Creating Indices
+####// Creating Indices
 
 - When we create an index, a replica is automaticaly generated
 - However, if we have a single node, that replica is unassigned, so the index is in "yellow" state, not "green" state.
@@ -806,22 +806,22 @@ In addition to replication, Elastic Search also allows to take snapshots and bac
 Here's some commands to create an index and inspect it:
 
 ```bash
-# Create Index pages
+#// Create Index pages
 PUT /pages
 
-# Get list of all indices
-# pages should appear, but in "yellow" status, 
-# because its shard replica is not assigned to another node
+#// Get list of all indices
+#// pages should appear, but in "yellow" status, 
+#// because its shard replica is not assigned to another node
 GET /_cat/indices?v
 
-# Get list of all shards
-# pages shoudl appear 2x, but the replica shard should be UNASSIGNED
+#// Get list of all shards
+#// pages shoudl appear 2x, but the replica shard should be UNASSIGNED
 GET /_cat/shards?v
 ```
 
 ![Replica shards](./assets/replica_shards.png)
 
-### Adding Nodes to the Cluster
+###// Adding Nodes to the Cluster
 
 Sharding for fault-tolerance and replication for increasing throughput can be done if we have at least 2 nodes. In managed cloud solutions, nodes are added automatically. However, in local deployments, we need to create nodes manually.
 
@@ -833,7 +833,7 @@ If we are running Elastic Search in a development environment, we can set new no
   ```powershell
   cd .../packages/elasticsearch-8.14.3
   bin\elasticsearch-create-enrollment-token.bat --scope node
-  # we take/copy the ENROLLMENT_TOKEN
+  #// we take/copy the ENROLLMENT_TOKEN
   ```
 - Go to `.../packages/elastic-second-node` and start a second `elasticsearch` with the enrollment token:
   ```powershell
@@ -850,7 +850,7 @@ If we are running Elastic Search in a development environment, we can set new no
 
 I we don't add further nodes, we can continue, but the cluster and the shards/indices will be in "yellow" state, because they are not distributed across several nodes.
 
-### Node Roles
+###// Node Roles
 
 Depending what they're used for, nodes can have different roles:
 
@@ -869,18 +869,18 @@ The field `node.role` in the response table contains the initial letters of each
 
 ![Nodes](./assets/nodes.png)
 
-## Managing Documents
+##// Managing Documents
 
-### Creating and Deleting Indices
+###// Creating and Deleting Indices
 
 ```json
-# Create an index
+#// Create an index
 PUT /pages
 
-# Delete an index
+#// Delete an index
 DELETE /pages
 
-# Create an index with specific properties
+#// Create an index with specific properties
 PUT /products
 {
   "settings": {
@@ -889,15 +889,15 @@ PUT /products
 }
 ```
 
-### Indexing and Deleting Documents
+###// Indexing and Deleting Documents
 
 Indexing a document means to create/add it into the index.
 
 ```json
-# Simple JSON Document indexed = created
-# An _id is automatically assigned if not provided
-# As we can see in the returned JSON
-# Also, we see we have 2 shards
+#// Simple JSON Document indexed = created
+#// An _id is automatically assigned if not provided
+#// As we can see in the returned JSON
+#// Also, we see we have 2 shards
 POST /products/_doc
 {
   "name": "Coffee Maker",
@@ -905,11 +905,11 @@ POST /products/_doc
   "in_stock": 10
 }
 
-# Here, we index a Document = we create one
-# but we force it to be of id 100
-# Note that the HTTP method is PUT, not POST!
-# We can use the same code
-# to replace entirely a Document
+#// Here, we index a Document = we create one
+#// but we force it to be of id 100
+#// Note that the HTTP method is PUT, not POST!
+#// We can use the same code
+#// to replace entirely a Document
 PUT /products/_doc/100
 {
   "name": "Toaster",
@@ -917,12 +917,12 @@ PUT /products/_doc/100
   "in_stock": 4
 }
 
-# Delete the document with ID 100
+#// Delete the document with ID 100
 DELETE /products/_doc/100
 
-# Get all Documents in the index products
-# The result is a JSON in which result['hits']['hits']
-# contains a list of al Document JSONs
+#// Get all Documents in the index products
+#// The result is a JSON in which result['hits']['hits']
+#// contains a list of al Document JSONs
 GET /products/_search
 {
   "query": {
@@ -930,7 +930,7 @@ GET /products/_search
   }
 }
 
-# Delete all the documents of an index
+#// Delete all the documents of an index
 POST /products/_delete_by_query
 {
   "query": {
@@ -938,19 +938,19 @@ POST /products/_delete_by_query
   }
 }
 
-# If the index was not created and we index
-# a Document, the index will be created automatically
-# and the Document added to it
+#// If the index was not created and we index
+#// a Document, the index will be created automatically
+#// and the Document added to it
 PUT /products_test/_doc/1
 {
   "price": 7.4
 }
 ```
 
-### Retrieving Documents by ID
+###// Retrieving Documents by ID
 
 ```json
-# Retrieve Document by ID
+#// Retrieve Document by ID
 GET /products/_doc/100
 ```
 
@@ -977,15 +977,15 @@ Notes:
 - If the `id=100` would not exist, we'd get `"found":false`.
 - The `JSON` has many metadata fields; the actual document is in `_source`.
 
-### Updating Documents
+###// Updating Documents
 
 In reality, Documents are **inmutable** in Elastic Search. Under the hood, when we update a Document, we replace it with a new one which contains teh modifications. 
 
 ```json
-# Update an existing field
-# To update a Document, 
-# we need to pass a JSON with an object "doc"
-# The returned JSON contains "result": "updated"
+#// Update an existing field
+#// To update a Document, 
+#// we need to pass a JSON with an object "doc"
+#// The returned JSON contains "result": "updated"
 POST /products/_update/100
 {
   "doc": {
@@ -993,7 +993,7 @@ POST /products/_update/100
   }
 }
 
-# Add a new field: "tags": ["electronics"]
+#// Add a new field: "tags": ["electronics"]
 POST /products/_update/100
 {
   "doc": {
@@ -1013,7 +1013,7 @@ PUT /products/_doc/100
 }
 ```
 
-### Scripted Updates
+###// Scripted Updates
 
 We can write scripts in the `JSON` used to perform the update. The scripts go in a `script` object, which contains:
 
@@ -1030,8 +1030,8 @@ The Document entity is accessed by the variable `ctx`, short for context. This v
 Additionally, we can add conditionals
 
 ```json
-# Go to Document with ID 100
-# Decrease by one unit the field in_stock
+#// Go to Document with ID 100
+#// Decrease by one unit the field in_stock
 POST /products/_update/100
 {
   "script": {
@@ -1039,8 +1039,8 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# Assign the value 10 to the field in_stock
+#// Go to Document with ID 100
+#// Assign the value 10 to the field in_stock
 POST /products/_update/100
 {
   "script": {
@@ -1048,8 +1048,8 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# Modify field in_stock with the values in params
+#// Go to Document with ID 100
+#// Modify field in_stock with the values in params
 POST /products/_update/100
 {
   "script": {
@@ -1060,9 +1060,9 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# If in_stock == 0, perform no operation
-# Else, decrease in_stock in one unit
+#// Go to Document with ID 100
+#// If in_stock == 0, perform no operation
+#// Else, decrease in_stock in one unit
 POST /products/_update/100
 {
   "script": {
@@ -1087,9 +1087,9 @@ POST /products/_update/100
   }
 }
 
-# Go to Document with ID 100
-# If in_stock < 0, delete the Document (product)
-# Else, decrease in_stock in one unit
+#// Go to Document with ID 100
+#// If in_stock < 0, delete the Document (product)
+#// Else, decrease in_stock in one unit
 POST /products/_update/100
 {
   "script": {
@@ -1104,7 +1104,7 @@ POST /products/_update/100
 }
 ```
 
-### Upserts
+###// Upserts
 
 *Upserting* means:
 
@@ -1112,9 +1112,9 @@ POST /products/_update/100
 - Else, a new Document is created.
 
 ```json
-# Upsert: Update or Insert/Create
-# If the product 101 doesn't exist, this creates it
-# Else, it increases in_stock in one unit
+#// Upsert: Update or Insert/Create
+#// If the product 101 doesn't exist, this creates it
+#// Else, it increases in_stock in one unit
 POST /products/_update/101
 {
   "script": {
@@ -1128,7 +1128,7 @@ POST /products/_update/101
 }
 ```
 
-### Routing Documents to Shards
+###// Routing Documents to Shards
 
 In general we'll have
 
@@ -1153,7 +1153,7 @@ It is possible to chage the default Routing strategy, too.
 
 ![Routing](./assets/routing.png)
 
-### How Elasticsearch Reads and Writes Document Data
+###// How Elasticsearch Reads and Writes Document Data
 
 In general, shards are organized in **Replica Groups**: several copies of a primary shard grouped together. Thus, Routing selectes the Replica Group rather than the shard, if we have properly set the Replica Groups.
 
@@ -1176,7 +1176,7 @@ In addition, other sequence numbers are maintained within a Replica Group to spe
 - Local checkpoint: sequence number of each shard related to the las operation.
 - Global checkpoint: minimum sequene number among all replicas, i.e., last synchronization/alignment.
 
-### Document Versioning and Optimistic Concurrency Control
+###// Document Versioning and Optimistic Concurrency Control
 
 By default, every time a Document is updated, `_version` increases a unit; however, only the last version of the Document is stored.
 
@@ -1194,14 +1194,14 @@ Optimistic Concurrency Control is implemented by passing the reference `_primary
 If we have a multi-threaded application where multiple threads could modify the same value of a Document, we should use this approach!
 
 ```json
-# Get Document with ID 100
-# _primary_term and seq_no are in the metadata
-# We take them to formulate the conditioned update request
+#// Get Document with ID 100
+#// _primary_term and seq_no are in the metadata
+#// We take them to formulate the conditioned update request
 GET /products/_doc/100
 
-# Update Document/product with ID 100 
-# if _primary_term == 1 and seq_no == 5 (reference values obtained in previous query)
-# If _primary_term and seq_no don't match, we get an error
+#// Update Document/product with ID 100 
+#// if _primary_term == 1 and seq_no == 5 (reference values obtained in previous query)
+#// If _primary_term and seq_no don't match, we get an error
 POST /products/_update/100?if_primary_term=1&if_seq_no=5
 {
   "doc": {
@@ -1210,7 +1210,7 @@ POST /products/_update/100?if_primary_term=1&if_seq_no=5
 }
 ```
 
-### Update and Delete by Query
+###// Update and Delete by Query
 
 We can perform operations similar to the SQL `UPDATE WHERE` with the API `_update_by_query`.
 To that end
@@ -1221,11 +1221,11 @@ To that end
 Note that this kind of filtered update might lead to errors/conflicts; if one error occurs, the request is aborted by default, but we can specify to proceed upon conflicts, too.
 
 ```json
-# Update a set of filtered Documents: _update_by_query
-# Write the update in "script"
-# Write the filterin "query"
-# Errors/conflicts can occur; by default the request is aborted
-# but we can specify to proceed if we want
+#// Update a set of filtered Documents: _update_by_query
+#// Write the update in "script"
+#// Write the filterin "query"
+#// Errors/conflicts can occur; by default the request is aborted
+#// but we can specify to proceed if we want
 POST /products/_update_by_query
 {
   "conflicts": "proceed",
@@ -1241,10 +1241,10 @@ POST /products/_update_by_query
 Similarly, we can `_delete_by_query`:
 
 ```json
-# Delete all Documents that match the query
-# in this case ALL DOCUMENTS!
-# If errors/conflicts occur, the request is aborted
-# unless we specify "conflicts": "proceed"
+#// Delete all Documents that match the query
+#// in this case ALL DOCUMENTS!
+#// If errors/conflicts occur, the request is aborted
+#// unless we specify "conflicts": "proceed"
 POST /products/_delete_by_query
 {
   "conflicts": "proceed",
@@ -1254,7 +1254,7 @@ POST /products/_delete_by_query
 }
 ```
 
-### Batch or Bulk Processing
+###// Batch or Bulk Processing
 
 We can use the **Bulk API** (`_bulk`) to process multiple Documents in batch.
 
@@ -1272,10 +1272,10 @@ For example, the following bulk request indexes 2 Documents:
 
 ```json
 POST /_bulk
-{ "index": { "_index": "products", "_id": 200 } }             # action + metadata
-{ "name": "Espresso Machine", "price": 199, "in_stock": 5 }   # source
-{ "create": { "_index": "products", "_id": 201 } }            # action + metadata
-{ "name": "Milk Frother", "price": 149, "in_stock": 14 }      # source
+{ "index": { "_index": "products", "_id": 200 } }             #// action + metadata
+{ "name": "Espresso Machine", "price": 199, "in_stock": 5 }   #// source
+{ "create": { "_index": "products", "_id": 201 } }            #// action + metadata
+{ "name": "Milk Frother", "price": 149, "in_stock": 14 }      #// source
 ```
 
 The `_bulk` API with the `NDJSON` specification has these properties:
@@ -1295,31 +1295,31 @@ The `_bulk` API with the `NDJSON` specification has these properties:
 More examples:
 
 ```json
-# Create new Documents
-# We can list many (action, source) pairs
-# Always newline after a line, also in last JSON
-# Four actions: create, index, update, delete
-# Each action needs a source (the Document fields), except delete
+#// Create new Documents
+#// We can list many (action, source) pairs
+#// Always newline after a line, also in last JSON
+#// Four actions: create, index, update, delete
+#// Each action needs a source (the Document fields), except delete
 POST /_bulk
 { "index": { "_index": "products", "_id": 200 } }
 { "name": "Espresso Machine", "price": 199, "in_stock": 5 }
 { "create": { "_index": "products", "_id": 201 } }
 { "name": "Milk Frother", "price": 149, "in_stock": 14 }
 
-# Update Documents + Delete
+#// Update Documents + Delete
 POST /_bulk
 { "update": { "_index": "products", "_id": 201 } }
 { "doc": { "price": 129 } }
 { "delete": { "_index": "products", "_id": 200 } }
 
-# If all actions are for the same index,
-# we can specify it in the API commad
+#// If all actions are for the same index,
+#// we can specify it in the API commad
 POST /products/_bulk
 { "update": { "_id": 201 } }
 { "doc": { "price": 129 } }
 { "delete": { "_id": 200 } }
 
-# Get all Documents in an index
+#// Get all Documents in an index
 GET /products/_search
 {
   "query": {
@@ -1328,33 +1328,33 @@ GET /products/_search
 }
 ```
 
-#### Bulk/Batch Processing with cURL
+####// Bulk/Batch Processing with cURL
 
 `cURL` commands to ingest [`products-bulk.json`](./products-bulk.json) with and without certificate:
 
 ```bash
-# Set variables in Powershell for easier and more secure use.
-# To use them: $Env:ELASTIC_USER
+#// Set variables in Powershell for easier and more secure use.
+#// To use them: $Env:ELASTIC_USER
 $Env:ELASTIC_USER = "elastic"
 $Env:ELASTIC_PASSWORD = "..."
 $Env:ELASTIC_HOME = "..."
-# Bash. To use them: $ELASTIC_USER
+#// Bash. To use them: $ELASTIC_USER
 export ELASTIC_USER="elastic"
 export ELASTIC_PASSWORD="..."
 export ELASTIC_HOME="..."
 
-# Without CA certificate validation.
-# This is fine for development clusters, but don't do this in production!
-# "@products-bulk.json" means we ingest a file, not a path
+#// Without CA certificate validation.
+#// This is fine for development clusters, but don't do this in production!
+#// "@products-bulk.json" means we ingest a file, not a path
 curl --insecure -u $ELASTIC_USER:$ELASIC_PASSWORD -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json"
-# Windows
+#// Windows
 curl.exe --insecure -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json"  --noproxy localhost
 
-# With CA certificate validation. 
-# The certificate is located at $ELASTIC_HOME/config/certs/http_ca.crt
-# "@products-bulk.json" means we ingest a file, not a path
+#// With CA certificate validation. 
+#// The certificate is located at $ELASTIC_HOME/config/certs/http_ca.crt
+#// "@products-bulk.json" means we ingest a file, not a path
 curl --cacert $ELASTIC_HOME/config/certs/http_ca.crt -u $ELASTIC_USER:$ELASIC_PASSWORD -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json"
-# Windows
+#// Windows
 curl.exe --cacert "$($Env:ELASTIC_HOME)\config\certs\http_ca.crt" -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/products/_bulk --data-binary "@products-bulk.json" --noproxy localhost
 ```
 
@@ -1371,34 +1371,34 @@ elastic_user = os.getenv("ELASTIC_USER")
 elastic_password = os.getenv("ELASIC_PASSWORD")
 elastic_home = os.getenv("ELASTIC_HOME")
 
-# Verify that the environment variables are correctly set
+#// Verify that the environment variables are correctly set
 if not all([elastic_user, elastic_password, elastic_home]):
     raise ValueError("One or more environment variables are not set")
 
-# Define the URL
+#// Define the URL
 url = "https://localhost:9200/products/_bulk"
 
-# Read the data from the file
+#// Read the data from the file
 with open("products-bulk.json", "rb") as data_file:
     data = data_file.read()
 
-# Make the POST request
+#// Make the POST request
 response = requests.post(
     url,
     auth=HTTPBasicAuth(elastic_user, elastic_password),
     headers={"Content-Type": "application/x-ndjson"},
     data=data,
     verify=os.path.join(elastic_home, "config", "certs", "http_ca.crt"),
-    proxies={"http": None, "https": None}  # Bypass proxy
+    proxies={"http": None, "https": None}  #// Bypass proxy
 )
 
-# Print the response
-print(response.text) # {"errors":false,"took":155,"items":[{"index":{"_index":"products","_id":"...
+#// Print the response
+print(response.text) #// {"errors":false,"took":155,"items":[{"index":{"_index":"products","_id":"...
 ```
 
-## Mapping & Analysis
+##// Mapping & Analysis
 
-### Introduction to Analysis
+###// Introduction to Analysis
 
 When we index a Document, it is **analyzed**. **Analysis** is referred to as **text analysis**. ES performs an analysis of the text/sources, such that the content in `_source` is not really used during the search, but the analyzed/processed text. An analyzer has 3 building blocks:
 
@@ -1420,14 +1420,14 @@ ES ships with built-in analyzers and we can combine them as we please. The stand
 
 ![Standard Analyzer](./assets/standard_analyzer.png)
 
-### Using the Analysis API
+###// Using the Analysis API
 
 We can run the analyzers in our text with the `_analyze` API: 
 
 ```json
-# Here a text string is analyzed
-# with the standard analyzer:
-# no char filter, standard tokenizer, lowercase token filter
+#// Here a text string is analyzed
+#// with the standard analyzer:
+#// no char filter, standard tokenizer, lowercase token filter
 POST /_analyze
 {
   "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
@@ -1526,9 +1526,9 @@ Note that punctuation is removed by the `standard` tokenizer/analyzer (also smil
 We can also explicitly define the components of the analyzer:
 
 ```json
-# Analyzer components explicitly defined:
-# character filer, tokenizer, token filters
-# This call produces the same results are before
+#// Analyzer components explicitly defined:
+#// character filer, tokenizer, token filters
+#// This call produces the same results are before
 POST /_analyze
 {
   "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
@@ -1538,7 +1538,7 @@ POST /_analyze
 }
 ```
 
-### Understanding Inverted Indices
+###// Understanding Inverted Indices
 
 See the section [Inverted Index](#inverted-index).
 
@@ -1552,7 +1552,7 @@ However, not only inverted indices are used for search; inverted indices are pri
 - B-Trees and BKD Trees for numeric data.
 - Doc Values for aggregation operations.
 
-### Introduction to Mapping
+###// Introduction to Mapping
 
 A mapping is the definition of the structure of a Document, i.e., **fields and types**; it is equivalent to a table schema in a relational DB.
 
@@ -1563,7 +1563,7 @@ Mappings can be:
 - Explicit: we define them ourselves.
 - Implicit: ES generates mappings when we index Documents using our inputs.
 
-### Data Types
+###// Data Types
 
 There are many [field data types](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html). 
 
@@ -1609,7 +1609,7 @@ Then, `keyword` fields can be used for fast filtering which are the previous nec
 
 Full-text searches are performed in `text` fields, and **the query text doesn't need to match exactly** the indexed text. The fields with `text` are ingested into inverted indices; each field has an inverted index.
 
-### Type Coercion
+###// Type Coercion
 
 When we index the first document to an index which was not created yet, the mappings (i.e., the schema, field-type pairs) are dynamically created.
 
@@ -1623,28 +1623,28 @@ One important point is that the real values used during search are not the ones 
 Type coercion can be disabled.
 
 ```json
-# The index coercion_test does not exist
-# but it is created and Document 1 added
-# The first time, the type is inferred: float
+#// The index coercion_test does not exist
+#// but it is created and Document 1 added
+#// The first time, the type is inferred: float
 PUT /coercion_test/_doc/1
 {
   "price": 7.4
 }
 
-# The next Document contains a string number
-# The type was inferred as float,
-# so ES will try to cast/convert the value,
-# this is called Type Coercion
-# This time it works!
-# HOWEVER: in _source we'll see a string
-# the casted float is in Apache Lucene...
+#// The next Document contains a string number
+#// The type was inferred as float,
+#// so ES will try to cast/convert the value,
+#// this is called Type Coercion
+#// This time it works!
+#// HOWEVER: in _source we'll see a string
+#// the casted float is in Apache Lucene...
 PUT /coercion_test/_doc/2
 {
   "price": "7.4"
 }
 
-# This time, the type conversion cannot work
-# We get an ERROR
+#// This time, the type conversion cannot work
+#// We get an ERROR
 PUT /coercion_test/_doc/3
 {
   "price": "7.4m"
@@ -1655,7 +1655,7 @@ GET /coercion_test/_doc/2
 DELETE /coercion_test
 ```
 
-### Arrays
+###// Arrays
 
 There are no `array` types because every type can be an `array`!
 
@@ -1676,7 +1676,7 @@ Also, note that arrays can contain nested arrays; in that case, they are flatten
 
 Finally, **arrays of objects need to be of type `nested` if we want to query the objects independently, as explained.**
 
-### Adding Explicit Mappings and Retrieving
+###// Adding Explicit Mappings and Retrieving
 
 In this section, a mapping is created, i.e., the equivalent of a table schema. The syntax is very simple, we defined fields with their types inside `mappings.properties` and if we have an object, we nest `properties` within it:
 
@@ -1699,9 +1699,9 @@ In this section, a mapping is created, i.e., the equivalent of a table schema. T
 Example:
 
 ```json
-# We create a mapping for the index reviews
-# For simple types, we define their type key-value
-# For object types, we need to nest a properties key again
+#// We create a mapping for the index reviews
+#// For simple types, we define their type key-value
+#// For object types, we need to nest a properties key again
 PUT /reviews
 {
   "mappings": {
@@ -1720,7 +1720,7 @@ PUT /reviews
   }
 }
 
-# Now we index the first Document
+#// Now we index the first Document
 PUT /reviews/_doc/1
 {
   "rating": 5.0,
@@ -1734,13 +1734,13 @@ PUT /reviews/_doc/1
 }
 ```
 
-#### Dot Notation
+####// Dot Notation
 
 Another way of adding an object is to use the *dot-notation*, which consists in defining object fields flattened by using `object_name.field_name` keys:
 
 ```json
-# Objects can be defined flattened
-# by using object_name.field_name keys 
+#// Objects can be defined flattened
+#// by using object_name.field_name keys 
 PUT /reviews_dot_notation
 {
   "mappings": {
@@ -1761,32 +1761,32 @@ DELETE /reviews_dot_notation
 This format is probably a bit easier.
 This *dot-notation* is not exclusive to creating the mappings, it can be used any time!
 
-#### Retrieving Mappings
+####// Retrieving Mappings
 
 ```json
-# Retrieving mappings for the `reviews` index
+#// Retrieving mappings for the `reviews` index
 GET /reviews/_mapping
 
-# Retrieving mapping for the `content` field
+#// Retrieving mapping for the `content` field
 GET /reviews/_mapping/field/content
 
-# Retrieving mapping for the `author.email` field
-# using dot-notation
+#// Retrieving mapping for the `author.email` field
+#// using dot-notation
 GET /reviews/_mapping/field/author.email
 ```
 
-### Extending Mappings to Existing Indices: Adding New Fields
+###// Extending Mappings to Existing Indices: Adding New Fields
 
 Case: We already have an Index and we'd like to add a field to it. We can do that with the `_mapping` API, by simply adding the field in the `properties`.
 
 ```json
-# Here, we have an Index reviews
-# and we add a new field to it: 
-# "created_at": { "type": "date" }
-# However, it is usually not possible to change/modify 
-# existing mappings or their fields. 
-# The alternative is to create new mappings 
-# and `_reindex` the old index to the new one.
+#// Here, we have an Index reviews
+#// and we add a new field to it: 
+#// "created_at": { "type": "date" }
+#// However, it is usually not possible to change/modify 
+#// existing mappings or their fields. 
+#// The alternative is to create new mappings 
+#// and `_reindex` the old index to the new one.
 PUT /reviews/_mapping
 {
   "properties": {
@@ -1801,7 +1801,7 @@ GET /reviews/_mapping
 
 However, it is usually not possible to change/modify existing mappings or their fields. The alternative is to create new mappings and `_reindex` the old index to the new one.
 
-### Date Type
+###// Date Type
 
 Dates can be specified as:
 
@@ -1822,8 +1822,8 @@ Standard formats must be used for the strings:
 Examples:
 
 ```json
-# Supplying only a date: "yyyy-mm-dd"
-# It will be converted and stored as milliseconds since epoch
+#// Supplying only a date: "yyyy-mm-dd"
+#// It will be converted and stored as milliseconds since epoch
 PUT /reviews/_doc/2
 {
   "rating": 4.5,
@@ -1837,11 +1837,11 @@ PUT /reviews/_doc/2
   }
 }
 
-# Supplying both a date and time: "yyyy-mm-ddThh:mm:ss"
-# It will be converted and stored as milliseconds since epoch
-# ISO 8601 must be used: 
-# - time separated with T
-# - Z for UTC time zone, no offset (Greenwich), or offset as "+hh:mm"
+#// Supplying both a date and time: "yyyy-mm-ddThh:mm:ss"
+#// It will be converted and stored as milliseconds since epoch
+#// ISO 8601 must be used: 
+#// - time separated with T
+#// - Z for UTC time zone, no offset (Greenwich), or offset as "+hh:mm"
 PUT /reviews/_doc/3
 {
   "rating": 3.5,
@@ -1855,8 +1855,8 @@ PUT /reviews/_doc/3
   }
 }
 
-# Specifying the UTC offset
-# "yyyy-mm-ddThh:mm:ss++hh:mm"
+#// Specifying the UTC offset
+#// "yyyy-mm-ddThh:mm:ss++hh:mm"
 PUT /reviews/_doc/4
 {
   "rating": 5.0,
@@ -1870,8 +1870,8 @@ PUT /reviews/_doc/4
   }
 }
 
-# Supplying a timestamp (milliseconds since the epoch)
-# Equivalent to 2015-07-04T12:01:24Z
+#// Supplying a timestamp (milliseconds since the epoch)
+#// Equivalent to 2015-07-04T12:01:24Z
 PUT /reviews/_doc/5
 {
   "rating": 4.5,
@@ -1885,7 +1885,7 @@ PUT /reviews/_doc/5
   }
 }
 
-# Retrieving documents
+#// Retrieving documents
 GET /reviews/_search
 {
   "query": {
@@ -1894,13 +1894,13 @@ GET /reviews/_search
 }
 ```
 
-### Missing Fields
+###// Missing Fields
 
 All fields are optional, in contrast to relational DBs. Even when we explicitly define a mapping with some fields, we don't have to use them. Also, when searching, missing fields are ignored.
 
 This allows for more felxibility, but it enforces additional validation/checks at the application level.
 
-### Overview of Mapping Parameters
+###// Overview of Mapping Parameters
 
 Apart from adding fields and their types to the mappings, we can tune some other [**Mapping parameters**](Mapping parameters):
 
@@ -1921,7 +1921,7 @@ Apart from adding fields and their types to the mappings, we can tune some other
 
 ![Copy to](./assets/copy_to.png)
 
-### Updating Existing Mappings: Reindexing
+###// Updating Existing Mappings: Reindexing
 
 We have seen how new fields can be added to existing mappings. However, usually it is not possible to modify/update existing mapping fields. If we want to do that, the alternative is to create a new index and reindex the old one to it with the `_reindex` API.
 
@@ -1930,13 +1930,13 @@ That makes sense: if we want to change a text type field to be a number type, th
 However, we can sometimes add restrictions to existing fields; for instance, we can force a field to ignore items of a given length with `ignore_above`.
 
 ```json
-# Get mapping of reviews index
-# The field product_id is of type integer
+#// Get mapping of reviews index
+#// The field product_id is of type integer
 GET /reviews/_mapping
 
-# Here, we try to change the type of product_id
-# This will yield an error.
-# Alternative: create an new index and reindex this to it.
+#// Here, we try to change the type of product_id
+#// This will yield an error.
+#// Alternative: create an new index and reindex this to it.
 PUT /reviews/_mapping
 {
   "properties": {
@@ -1946,8 +1946,8 @@ PUT /reviews/_mapping
   }
 }
 
-# However, we can sometimes add restrictions to existing fields
-# as shown here: emails longer than 256 characters are ignored now
+#// However, we can sometimes add restrictions to existing fields
+#// as shown here: emails longer than 256 characters are ignored now
 PUT /reviews/_mapping
 {
   "properties": {
@@ -1966,19 +1966,19 @@ PUT /reviews/_mapping
 The [Reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html) can be used as follows:
 
 ```json
-# First, we get the mapping of an index
-# We copy the output to paste it in the
-# next command, which creates a new index
+#// First, we get the mapping of an index
+#// We copy the output to paste it in the
+#// next command, which creates a new index
 GET /reviews/_mappings
 
-# This is the new index
-# We paste the mapping obtained before
-# and change the field(s) we want:
-# "product_id": {"type": "integer"} -> {"type": "keyword"}
-# PUT /reviews_new
-# {
-#   ... paste the mappings content here
-# }
+#// This is the new index
+#// We paste the mapping obtained before
+#// and change the field(s) we want:
+#// "product_id": {"type": "integer"} -> {"type": "keyword"}
+#// PUT /reviews_new
+#// {
+#//   ... paste the mappings content here
+#// }
 PUT /reviews_new
 {
   "mappings" : {
@@ -2013,13 +2013,13 @@ PUT /reviews_new
   }
 }
 
-# After the new index is created
-# we add documents to it by reindexing
-# from the old index.
-# Re-indexing is much cheaper than indexing
-# the documents anew!
-# We specify in the source and dest
-# the old and the new indices, respectively
+#// After the new index is created
+#// we add documents to it by reindexing
+#// from the old index.
+#// Re-indexing is much cheaper than indexing
+#// the documents anew!
+#// We specify in the source and dest
+#// the old and the new indices, respectively
 POST /_reindex
 {
   "source": {
@@ -2029,9 +2029,9 @@ POST /_reindex
     "index": "reviews_new"
   }
 }
-# However, this does not change the _source objects
-# That is not a problem, but if we want
-# to be consistent, we can add a script
+#// However, this does not change the _source objects
+#// That is not a problem, but if we want
+#// to be consistent, we can add a script
 POST /_reindex
 {
   "source": {
@@ -2049,7 +2049,7 @@ POST /_reindex
   }
 }
 
-# Check that everything run ok
+#// Check that everything run ok
 GET /reviews_new/_search
 {
   "query": {
@@ -2057,13 +2057,13 @@ GET /reviews_new/_search
   }
 }
 
-# We can also reindex only a subset
-# of the documents.
-# To that end, we need to change the match_all
-# query by a more specific one,
-# e.g., in this example, only
-# reviews greater than 4.0
-# are reindexed
+#// We can also reindex only a subset
+#// of the documents.
+#// To that end, we need to change the match_all
+#// query by a more specific one,
+#// e.g., in this example, only
+#// reviews greater than 4.0
+#// are reindexed
 POST /_reindex
 {
   "source": {
@@ -2081,10 +2081,10 @@ POST /_reindex
   }
 }
 
-# To remove fields when reindexing
-# we apply source-filtering,
-# i.e., we specify the fields from _source
-# that we want to copy -- the rest is ignored!
+#// To remove fields when reindexing
+#// we apply source-filtering,
+#// i.e., we specify the fields from _source
+#// that we want to copy -- the rest is ignored!
 POST /_reindex
 {
   "source": {
@@ -2096,9 +2096,9 @@ POST /_reindex
   }
 }
 
-# Renaming field names during reindexing
-# However, reindexing to rename a field
-# is a bed idea -- instead, use field aliases!
+#// Renaming field names during reindexing
+#// However, reindexing to rename a field
+#// is a bed idea -- instead, use field aliases!
 POST /_reindex
 {
   "source": {
@@ -2109,14 +2109,14 @@ POST /_reindex
   },
   "script": {
     "source": """
-      # Rename "content" field to "comment"
+      #// Rename "content" field to "comment"
       ctx._source.comment = ctx._source.remove("content");
     """
   }
 }
 
-# Ignore reviews with ratings below 4.0
-# However, it is better in general to use a query
+#// Ignore reviews with ratings below 4.0
+#// However, it is better in general to use a query
 POST /_reindex
 {
   "source": {
@@ -2128,25 +2128,25 @@ POST /_reindex
   "script": {
     "source": """
       if (ctx._source.rating < 4.0) {
-        ctx.op = "noop"; # Can also be set to "delete"
+        ctx.op = "noop"; #// Can also be set to "delete"
       }
     """
   }
 }
 ```
 
-### Field Aliases
+###// Field Aliases
 
 Reindexing to rename a field is a bad idea; instead, we can use field aliases. Alias fields can be used as regular fields and the original fields are unaffected; that's because queries with aliases are translated into queries with the original fields before being executed.
 
 ```json
-# Reindexing to rename a field is a bed idea;
-# instead, we can use field aliases.
-# Here, we
-# add `comment` alias pointing to the `content` field,
-# so content is an alias of comment.
-# Alias fields can be used as regular fields
-# and the original fields are unaffected
+#// Reindexing to rename a field is a bed idea;
+#// instead, we can use field aliases.
+#// Here, we
+#// add `comment` alias pointing to the `content` field,
+#// so content is an alias of comment.
+#// Alias fields can be used as regular fields
+#// and the original fields are unaffected
 PUT /reviews/_mapping
 {
   "properties": {
@@ -2157,9 +2157,9 @@ PUT /reviews/_mapping
   }
 }
 
-# Using the field alias
-# Here we search for all items
-# that have outstanding in the comment alias field
+#// Using the field alias
+#// Here we search for all items
+#// that have outstanding in the comment alias field
 GET /reviews/_search
 {
   "query": {
@@ -2169,7 +2169,7 @@ GET /reviews/_search
   }
 }
 
-# Using the "original" field name still works
+#// Using the "original" field name still works
 GET /reviews/_search
 {
   "query": {
@@ -2180,7 +2180,7 @@ GET /reviews/_search
 }
 ```
 
-### Multi-Field Mappings
+###// Multi-Field Mappings
 
 It is possible to add two types to a field in some cases; this is frequently done with key text fields:
 
@@ -2193,15 +2193,15 @@ In the used example, we have a DB with recipies. The recipes mapping has two fie
 The `ingredients` field is defined as multifield: this can be done by adding a `fields` key under the `"type": "text"` key-value pair, which contains `"keyword": {"type": "keyword"}`. That way, we can perform both `text` (non-exact) and `keyword` (exact) searches on the field. That is an example use case of multi-field mappings.
 
 ```json
-# The most common multi-field mapping
-# is the one where a field is both text and keyword.
-# To that end:
-# We add `keyword` mapping to a `text` field
-# This effectively creates an additional index:
-# ingredients.keyword
-# In contrast to the ingredients field,
-# which allows non-exact term search
-# the new (sub-)field allows exact search
+#// The most common multi-field mapping
+#// is the one where a field is both text and keyword.
+#// To that end:
+#// We add `keyword` mapping to a `text` field
+#// This effectively creates an additional index:
+#// ingredients.keyword
+#// In contrast to the ingredients field,
+#// which allows non-exact term search
+#// the new (sub-)field allows exact search
 PUT /multi_field_test
 {
   "mappings": {
@@ -2221,14 +2221,14 @@ PUT /multi_field_test
   }
 }
 
-# Index a test document
+#// Index a test document
 POST /multi_field_test/_doc
 {
   "description": "To make this spaghetti carbonara, you first need to...",
   "ingredients": ["Spaghetti", "Bacon", "Eggs"]
 }
 
-# Retrieve documents: everything OK
+#// Retrieve documents: everything OK
 GET /multi_field_test/_search
 {
   "query": {
@@ -2236,8 +2236,8 @@ GET /multi_field_test/_search
   }
 }
 
-# Querying the `text` mapping
-# (non-exact match/search)
+#// Querying the `text` mapping
+#// (non-exact match/search)
 GET /multi_field_test/_search
 {
   "query": {
@@ -2247,13 +2247,13 @@ GET /multi_field_test/_search
   }
 }
 
-# Querying the `keyword` mapping (exact match)
-# A new index `ingredients.keyword` has been created
-# apart from `ingredients`, and here we search
-# for exactly matching keywords in `ingredients.keyword`
-# Thus, multi-fields allow different search types
-# but bear in mind that in reality multiple indices
-# are created under the hood.
+#// Querying the `keyword` mapping (exact match)
+#// A new index `ingredients.keyword` has been created
+#// apart from `ingredients`, and here we search
+#// for exactly matching keywords in `ingredients.keyword`
+#// Thus, multi-fields allow different search types
+#// but bear in mind that in reality multiple indices
+#// are created under the hood.
 GET /multi_field_test/_search
 {
   "query": {
@@ -2263,24 +2263,24 @@ GET /multi_field_test/_search
   }
 }
 
-# Clean up
+#// Clean up
 DELETE /multi_field_test
 ```
 
-### Index Templates
+###// Index Templates
 
 We can create [index templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-template.html) that can be used to apply settings and mappings whenever a new index is created, if the name matches a pattern. We use the API `_index_template` for that.
 
 General structure of an index template:
 
 ```json
-# Index Template
-PUT /_index_template/my-index-template        # (Arbitraty) Name
+#// Index Template
+PUT /_index_template/my-index-template        #// (Arbitraty) Name
 {
-  "index_patterns": ["my-index-pattern*"],    # Pattern(s) to apply template in
+  "index_patterns": ["my-index-pattern*"],    #// Pattern(s) to apply template in
   "template": {
-    "settings": { ... },                      # Settings for new index (optional)
-    "mappings": { ... }                       # Field mappings for new index (optional)
+    "settings": { ... },                      #// Settings for new index (optional)
+    "mappings": { ... }                       #// Field mappings for new index (optional)
   }
 }
 ```
@@ -2308,9 +2308,9 @@ Additionally, we can still manually create indices when a template exists; in th
 Example index template:
 
 ```json
-# We can create a reusable index template
-# by specifying its settings and mappings
-# Example index template: access-logs-*
+#// We can create a reusable index template
+#// by specifying its settings and mappings
+#// Example index template: access-logs-*
 PUT /_index_template/access-logs
 {
   "index_patterns": ["access-logs-*"],
@@ -2341,10 +2341,10 @@ PUT /_index_template/access-logs
   }
 }
 
-# Then, we add a doc to a non-existing index
-# but whose template is already created (above)
-# - Index access-logs-2023-01 will be created automatically
-# - doc will be indexed
+#// Then, we add a doc to a non-existing index
+#// but whose template is already created (above)
+#// - Index access-logs-2023-01 will be created automatically
+#// - doc will be indexed
 POST /access-logs-2023-01/_doc
 {
   "@timestamp": "2023-01-01T00:00:00Z",
@@ -2364,9 +2364,9 @@ POST /access-logs-2023-01/_doc
   "user_agent.os.version": "12.1.0"
 }
 
-# We can also manually create an index when a template exists
-# and can even extend the definition of the template,
-# e.g., by adding a new field - here, url.query (keyword) is added
+#// We can also manually create an index when a template exists
+#// and can even extend the definition of the template,
+#// e.g., by adding a new field - here, url.query (keyword) is added
 PUT /access-logs-2023-02
 {
   "settings": {
@@ -2381,14 +2381,14 @@ PUT /access-logs-2023-02
   }
 }
 
-# Get/retrieve an index
+#// Get/retrieve an index
 GET /access-logs-2023-01
 GET /access-logs-2023-02
 
-# Retrieving an index template
+#// Retrieving an index template
 GET /_index_template/access-logs
 
-# Deleting an index template
+#// Deleting an index template
 DELETE /_index_template/access-logs
 ```
 
@@ -2401,7 +2401,7 @@ Final notes:
   - `synthetics-*-*`
   - `profiling-*-*`
 
-### Introduction to Dynamic Mappings
+###// Introduction to Dynamic Mappings
 
 Dynamic mapping refers to the fact that the index is automatically created when we try to ingest a Document in an index which has not been created. The fields and types are automatically inferred and the mapping is automatically created.
 
@@ -2418,7 +2418,7 @@ However, leaving ES to automatically infer the mapping is in some cases a waste 
 We can combine explicit and dynamic mapping, i.e., we create an explicit mapping first and add a new field dynamically via a Document. 
 
 ```json
-# Create index with one field mapping
+#// Create index with one field mapping
 PUT /people
 {
   "mappings": {
@@ -2430,24 +2430,24 @@ PUT /people
   }
 }
 
-# Index a test document with an unmapped field
+#// Index a test document with an unmapped field
 POST /people/_doc
 {
   "first_name": "Mikel",
   "last_name": "Sagardia"
 }
 
-# Retrieve mapping
-# both first_name and last_name fields appear
-# but last_name has two types: text + keyword
-# because it was dynamically inferred
+#// Retrieve mapping
+#// both first_name and last_name fields appear
+#// but last_name has two types: text + keyword
+#// because it was dynamically inferred
 GET /people/_mapping
 
-# Clean up
+#// Clean up
 DELETE /people
 ```
 
-### Configuring Dynamic Mappings
+###// Configuring Dynamic Mappings
 
 We can configure daynamic mapping in several ways:
 
@@ -2456,11 +2456,11 @@ We can configure daynamic mapping in several ways:
 - We can disable automatic date detection with `"date_detection": false`.
 
 ```json
-# Disable dynamic mapping ("dynamic": false)
-# New fields are ignored, if we try to insert them
-# but still continue being part of _source
-# Remember _source is not part of the search
-# data structures.
+#// Disable dynamic mapping ("dynamic": false)
+#// New fields are ignored, if we try to insert them
+#// but still continue being part of _source
+#// Remember _source is not part of the search
+#// data structures.
 PUT /people
 {
   "mappings": {
@@ -2473,8 +2473,8 @@ PUT /people
   }
 }
 
-# Disable strictly dynamic mapping ("dynamic": "strict"),
-# i.e., if we try to insert new fields an error occurs.
+#// Disable strictly dynamic mapping ("dynamic": "strict"),
+#// i.e., if we try to insert new fields an error occurs.
 PUT /people
 {
   "mappings": {
@@ -2487,11 +2487,11 @@ PUT /people
   }
 }
 
-# The dynamic setting is inherited to all the fields in
-# the mapping, but we can overwrite it in any field.
-# Here other is an object an we set "dynamic": true,
-# so we can extend it, even though we cannot extend 
-# the index outside from other, because it's set to "dynamic": "strict"!
+#// The dynamic setting is inherited to all the fields in
+#// the mapping, but we can overwrite it in any field.
+#// Here other is an object an we set "dynamic": true,
+#// so we can extend it, even though we cannot extend 
+#// the index outside from other, because it's set to "dynamic": "strict"!
 PUT /computers
 {
   "mappings": {
@@ -2519,31 +2519,31 @@ PUT /computers
   }
 }
 
-# We can set "numeric_detection": true
-# So that new fields will be forced to be
-# numbers if possible, 
-# even when they are input as text
+#// We can set "numeric_detection": true
+#// So that new fields will be forced to be
+#// numbers if possible, 
+#// even when they are input as text
 PUT /computers
 {
   "mappings": {
     "numeric_detection": true
   }
 }
-# New string fields are indexed
-# as numbers, because it's possible
-# and "numeric_detection": true
+#// New string fields are indexed
+#// as numbers, because it's possible
+#// and "numeric_detection": true
 POST /computers/_doc
 {
   "specifications": {
     "other": {
-      "max_ram_gb": "32", # long
-      "bluetooth": "5.2" # float
+      "max_ram_gb": "32", #// long
+      "bluetooth": "5.2" #// float
     }
   }
 }
 ```
 
-### Dynamic Templates
+###// Dynamic Templates
 
 Another way of configuring dynamic mappings are dynamic templates, defined inside the key `dynamic_templates`. We basically define a mapping for any new field with a concrete type, e.g., every whole number needs to be parsed as a `long`. Concretely, a `dynamic_template` has these components:
 
@@ -2552,18 +2552,18 @@ Another way of configuring dynamic mappings are dynamic templates, defined insid
 - Finally, we have a `"mapping"` field in which we wan define the typea and further parameters.
 
 ```json
-# dynamic_templates can be used to define the parsing
-# of concrete values to a given type + parameters, among others
-# Example: Map whole numbers to `integer` instead of `long`
+#// dynamic_templates can be used to define the parsing
+#// of concrete values to a given type + parameters, among others
+#// Example: Map whole numbers to `integer` instead of `long`
 PUT /dynamic_template_test
 {
   "mappings": {
     "dynamic_templates": [
       {
         "integers": {
-          "match_mapping_type": "long", # every JSON field with a whole number...
+          "match_mapping_type": "long", #// every JSON field with a whole number...
           "mapping": {
-            "type": "integer" # ... will be parsed as integer
+            "type": "integer" #// ... will be parsed as integer
           }
         }
       }
@@ -2571,28 +2571,28 @@ PUT /dynamic_template_test
   }
 }
 
-# Test the dynamic template
+#// Test the dynamic template
 POST /dynamic_template_test/_doc
 {
   "in_stock": 123
 }
 
-# Retrieve mapping (and dynamic template)
+#// Retrieve mapping (and dynamic template)
 GET /dynamic_template_test/_mapping
 ```
 
 One common use case would be to modify the way strings are mapped by default; instead of creating for a string a `text` and `keyword` field, we might want to create just a `text` field, or limit the length of the keyword with `ignore_above`.
 
 ```json
-# One common use case would be to modify
-# the way strings are mapped by default; 
-# instead of creating for a string a `text` and `keyword` field, 
-# we might want to create just a `text` field,
-# or limit the length of the keyword with `ignore_above`.
-# In the example, we modify default mapping for strings:
-# We set `ignore_above` to 512,
-# so all strings will get a text field and a keyword field
-# but the maximum length of the keyword will be 512
+#// One common use case would be to modify
+#// the way strings are mapped by default; 
+#// instead of creating for a string a `text` and `keyword` field, 
+#// we might want to create just a `text` field,
+#// or limit the length of the keyword with `ignore_above`.
+#// In the example, we modify default mapping for strings:
+#// We set `ignore_above` to 512,
+#// so all strings will get a text field and a keyword field
+#// but the maximum length of the keyword will be 512
 PUT /test_index
 {
   "mappings": {
@@ -2622,13 +2622,13 @@ For each dynamic template, we have conditions that can be specified with **`matc
 - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`; we can apply regex here!
 
 ```json
-# For each dynamic template, 
-# we have conditions that can be specified 
-# with **`match` and/or `unmatch`** parameters:
-# - `"match": "text_*"`: all fields with a name that matches `text_*`;
-# we can apply regex here!
-# - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`;
-# we can apply regex here!
+#// For each dynamic template, 
+#// we have conditions that can be specified 
+#// with **`match` and/or `unmatch`** parameters:
+#// - `"match": "text_*"`: all fields with a name that matches `text_*`;
+#// we can apply regex here!
+#// - `"unmatch": "*_keyword"`: except all fields with a name that matches `*_keyword`;
+#// we can apply regex here!
 PUT /test_index
 {
   "mappings": {
@@ -2658,17 +2658,17 @@ PUT /test_index
 
 POST /test_index/_doc
 {
-  "text_product_description": "A description.", # first template is matched -> type: text
-  "text_product_id_keyword": "ABC-123" # second template is matched -> type: keyword
+  "text_product_description": "A description.", #// first template is matched -> type: text
+  "text_product_id_keyword": "ABC-123" #// second template is matched -> type: keyword
 }
 ```
 
 Similarly, we have the **`path_match` and `path_unmatch`** parameters, which refer to the dotted field name, i.e., `field_name.subfield_name`.
 
 ```json
-# In the context of dynamic mapping definitions,
-# we also have the **`path_match` and `path_unmatch`** parameters,
-# which refer to the dotted field name, i.e., `field_name.subfield_name`.
+#// In the context of dynamic mapping definitions,
+#// we also have the **`path_match` and `path_unmatch`** parameters,
+#// which refer to the dotted field name, i.e., `field_name.subfield_name`.
 PUT /test_index
 {
   "mappings": {
@@ -2699,7 +2699,7 @@ POST /test_index/_doc
 }
 ```
 
-### Mapping Recommendations
+###// Mapping Recommendations
 
 Best practices:
 
@@ -2711,7 +2711,7 @@ Best practices:
 - Set `norms: false` if we don't need relevance scoreing.
 - Set `index: false` if we won't filter values.
 
-### Stemming and Stop Words
+###// Stemming and Stop Words
 
 A word (noun, verb, etc.) can change its root form depending on 
 
@@ -2730,13 +2730,13 @@ Since we create inverted indices using unique terms, this leads to many useless 
 
 Similarly, **stop words** are the most common words that are filtered out at any analysis, because they provide little to no value to relevance scoring. It was common to remove them in ES, but it's not that usual anymore, because the relevance ranking algorithms in ES have become better.
 
-### Analyzers and Search Queries
+###// Analyzers and Search Queries
 
 When we ingest/index a document, its text fields are processed by the analyzer, which performs the **tokenization** and **stemming** of the words/symbols.
 
 When we run a text search query, that query is processed by the same analyzer by default; otherwise, the queries wouldn't work...
 
-### Built-in Analyzers
+###// Built-in Analyzers
 
 There are [pre-configured analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html):
 
@@ -2757,7 +2757,7 @@ There are [pre-configured analyzers](https://www.elastic.co/guide/en/elasticsear
   - lowercase
 - [Language specific analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-lang-analyzer.html), e.g., `english`.
 
-### Custom Analyzer
+###// Custom Analyzer
 
 We can create custom analyzers, similar to the [built-in analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html). These are created for each index, usually when creating the index; however, we can also add them later, as shown in the next section.
 
@@ -2766,21 +2766,21 @@ To create a custom analyzer, we need to build an `analyzer` object and configure
     "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 
 ```json
-# Analyze the text with the standard analyzer
-# HTML characters are tokenized one by one...
-# We need to create our own analyzer...
+#// Analyze the text with the standard analyzer
+#// HTML characters are tokenized one by one...
+#// We need to create our own analyzer...
 POST /_analyze
 {
   "analyzer": "standard",
   "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 }
 
-# Creation of a custom analyzer
-# able to process a text with HTML tags
-# and handle special characters
-# Note that we create it within an index: analyzer_test
-# In other words, it is created when creting the index.
-# It can be added later too, though, as shown below.
+#// Creation of a custom analyzer
+#// able to process a text with HTML tags
+#// and handle special characters
+#// Note that we create it within an index: analyzer_test
+#// In other words, it is created when creting the index.
+#// It can be added later too, though, as shown below.
 PUT /analyzer_test
 {
   "settings": {
@@ -2792,8 +2792,8 @@ PUT /analyzer_test
           "tokenizer": "standard",
           "filter": [
             "lowercase",
-            "stop",           # remove stop words
-            "asciifolding"    # convert special symbols to ASCII equivalent
+            "stop",           #// remove stop words
+            "asciifolding"    #// convert special symbols to ASCII equivalent
           ]
         }
       }
@@ -2801,21 +2801,21 @@ PUT /analyzer_test
   }
 }
 
-# Analyze the text with the custom analyzer
-# Note that we need to run it within the index
-# where it was defined
+#// Analyze the text with the custom analyzer
+#// Note that we need to run it within the index
+#// where it was defined
 POST /analyzer_test/_analyze
 {
   "analyzer": "standard",
   "text": "I&apos;m in a <em>good</em> mood&nbsp;-&nbsp;and I <strong>love</strong> açaí!"
 }
 
-# We can also alter the filters
-# For instance, here we create a filter spanish_stop
-# which removes Spanish stop words.
-# We can do the same thing for
-# - character filters
-# - tokenizers
+#// We can also alter the filters
+#// For instance, here we create a filter spanish_stop
+#// which removes Spanish stop words.
+#// We can do the same thing for
+#// - character filters
+#// - tokenizers
 PUT /analyzer_test
 {
   "settings": {
@@ -2827,10 +2827,10 @@ PUT /analyzer_test
         }
       },
       "char_filter": {
-        # Add character filters here
+        #// Add character filters here
       },
       "tokenizer": {
-        # Add tokenizers here
+        #// Add tokenizers here
       },
       "analyzer": {
         "my_custom_analyzer": {
@@ -2849,7 +2849,7 @@ PUT /analyzer_test
 }
 ```
 
-### Adding/Updating Analyzers to/from Existing Indices
+###// Adding/Updating Analyzers to/from Existing Indices
 
 When we have already created an index but we'd like to add a custom analyzer to it, we can do it via the `_settings` API. It uses the same syntax/configuration as when creating an index and adding a custom analyzer to it (i.e., previous section).
 
@@ -2868,21 +2868,21 @@ A custom analyzer is a *static* setting, so we need to close the corresponding i
 Updating an existing analyzer requires the same calls, but at the end we need to call the `_update_by_query` API to fix Documents that were indexed with the old analyzer; otherwise, there might be inconsistencies and the search doesn't work properly.
 
 ```json
-# First, close the index
-# This is necessary because
-# the analyzer setting is static
-# not dynamic, i.e., we need to
-# stop any operations in the index
-# before we change it
+#// First, close the index
+#// This is necessary because
+#// the analyzer setting is static
+#// not dynamic, i.e., we need to
+#// stop any operations in the index
+#// before we change it
 POST /analyzer_test/_close
 
-# Then, create/add a custom analyzer
-# The syntax is the same as when
-# we create and configure an index
-# with a custom analyzer
-# Updating and existing one is done also with
-# the same call, but we additionally need to
-# call the _update_by_query API, shown below
+#// Then, create/add a custom analyzer
+#// The syntax is the same as when
+#// we create and configure an index
+#// with a custom analyzer
+#// Updating and existing one is done also with
+#// the same call, but we additionally need to
+#// call the _update_by_query API, shown below
 PUT /analyzer_test/_settings
 {
   "analysis": {
@@ -2901,24 +2901,24 @@ PUT /analyzer_test/_settings
   }
 }
 
-# Re-Open the index again
-# If an index is closed, no queries are accepted
-# no indexing of Documents can happen
+#// Re-Open the index again
+#// If an index is closed, no queries are accepted
+#// no indexing of Documents can happen
 POST /analyzer_test/_open
 
-# Check that the change took place
+#// Check that the change took place
 GET /analyzer_test/_settings
 
-# If we have updated the analyzer,
-# and not created a new one,
-# we need to update the Documents
-# to be processed by the new analyzer,
-# otherwise the indexed values are inconsistent.
-# This call re-indexes all Documents again.
+#// If we have updated the analyzer,
+#// and not created a new one,
+#// we need to update the Documents
+#// to be processed by the new analyzer,
+#// otherwise the indexed values are inconsistent.
+#// This call re-indexes all Documents again.
 POST /analyzer_test/_update_by_query?conflicts=proceed
 ```
 
-## Searching for Data
+##// Searching for Data
 
 Search is performed with the API `_search`:
 
@@ -2990,7 +2990,7 @@ The following JSON is returned. Note the fields:
     },
     "max_score": 1,
     "hits": [
-      { # first Document
+      { #// first Document
         "_index": "products",
         "_id": "1",
         "_score": 1,
@@ -3012,7 +3012,7 @@ The following JSON is returned. Note the fields:
           "created": "2004/05/13"
         }
       },
-      { # second Document
+      { #// second Document
         "_index": "products",
         ...
       }
@@ -3021,45 +3021,45 @@ The following JSON is returned. Note the fields:
 }
 ```
 
-### Term-Level Queries
+###// Term-Level Queries
 
 
 
-## Joining Queries
-
-TBD.
-
-:construction:
-
-## Controlling Query Results
+##// Joining Queries
 
 TBD.
 
 :construction:
 
-## Aggregations
+##// Controlling Query Results
 
 TBD.
 
 :construction:
 
-## Improving Search Results
+##// Aggregations
 
 TBD.
 
 :construction:
 
-## Kibana
+##// Improving Search Results
+
+TBD.
+
+:construction:
+
+##// Kibana
 
 See [`./kibana/`](./kibana/).
 
-## Logstash
+##// Logstash
 
 TBD.
 
 :construction:
 
-## License
+##// License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
 

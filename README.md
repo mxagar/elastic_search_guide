@@ -89,6 +89,7 @@ Table of contents:
     - [Adding/Updating Analyzers to/from Existing Indices](#addingupdating-analyzers-tofrom-existing-indices)
   - [Searching for Data](#searching-for-data)
     - [Term-Level Queries](#term-level-queries)
+    - [Retrieving Documents by IDs](#retrieving-documents-by-ids)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3023,7 +3024,88 @@ The following JSON is returned. Note the fields:
 
 ### Term-Level Queries
 
+Term-level queries are those which **search for exact words**, i.e., we should use them with *keywords*, *numbers*, *booleans*, *dates*, etc. These search queries are not processed by analyzers, i.e., 
 
+- They are case-sensitive, or sensitive to any other filters/transformations in the analyzer.
+- We should never use them with text fields, because tezt fields are analyzed, thus, their tokens won't be like the term we are searching for.
+
+Examples:
+
+```json
+#// Term-Level queries can be used
+#// to perform exact searches.
+#// They should be used with *keywords*, *numbers*, *booleans*, *dates*
+#// but never for *text* fields, since no analyzer is used,
+#// which transforms the queried word.
+#// Example: Term query in which we find for all product Documents
+#// which contain the tag "Vegetable"; the tag "vegetable"
+#// won't be found
+GET /products/_search
+{
+  "query": {
+    "term": {
+      "tags.keyword": "Vegetable"
+    }
+  }
+}
+
+#// Same query as before,
+#// but with explicit syntax
+#// The advantage is that we can add
+#// more parameters, like case_insensitive
+GET /products/_search
+{
+  "query": {
+    "term": {
+      "tags.keyword": {
+        "value": "Vegetable",
+        "case_insensitive": true
+      }
+    }
+  }
+}
+
+#// Term-search query for multiple values
+#// Note the field is plural: terms
+GET /products/_search
+{
+  "query": {
+    "terms": {
+      "tags.keyword": ["Soup", "Meat"]
+    }
+  }
+}
+
+#// Term-search for 
+#// numbers, booleans, dates, timestamps
+GET /products/_search
+{
+  "query": {
+    "term": {
+      //"in_stock": 1
+      //"created": "2007/10/14"
+      //"created": "2007/10/14 12:34:56"
+      "is_active": true
+    }
+  }
+}
+```
+
+### Retrieving Documents by IDs
+
+```json
+#// Retrieve documents by IDs
+#// Not all IDs we specify are required to match!
+#// Simply, the ones that are matched are returned
+GET /products/_search
+{
+  "query": {
+    "ids": {
+      "values": ["100", "200", "300"]
+    }
+  }
+}
+```
 
 ## Joining Queries
 

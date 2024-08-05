@@ -1,4 +1,4 @@
-#// Elastic Search Guide
+# Elastic Search Guide
 
 This are my notes on **ElasticSearch** and **search methods** with focus on Machine Learning.
 
@@ -98,7 +98,7 @@ Table of contents:
   - [License](#license)
 
 
-##// Introduction
+## Introduction
 
 [Elastic Search](https://www.elastic.co/) is an open source analytics and full-text search engine.
 
@@ -133,7 +133,7 @@ Some other properties:
 - Used by many large companies: FB, Netflix, etc.
 - Queries can be done using Query DSL
 
-###// Elastic Stack
+### Elastic Stack
 
 Elastic has built several products which can interact with each other:
 
@@ -150,7 +150,7 @@ Elastic has built several products which can interact with each other:
 
 ![Elastic Stack](./assets/elastic_stack.png)
 
-###// Common Application Architecture
+### Common Application Architecture
 
 Let's consider an e-commerce site, where users can buy things via a web store/page. We have these components:
 
@@ -186,9 +186,9 @@ Thus, it makes sense to add **Logstash** to the architecture, which enables log/
 Our database and ES should be synchronized. However, ideally, our application should have read permissions in ES. How is that possible?
 -->
 
-##// Getting Started: Setting Up Elastic Search and Kibana
+## Getting Started: Setting Up Elastic Search and Kibana
 
-###// Setup
+### Setup
 
 There are many options to install Elastic Search and Kibana:
 
@@ -199,7 +199,7 @@ There are many options to install Elastic Search and Kibana:
 
 Usually, we want to have an ES cluster on the cloud for scalability; it can be a self-managed ES cluster, not necessarily the Elastic Cloud solution.
 
-####// Elastic Cloud
+#### Elastic Cloud
 
 Elastic Cloud has everything set up and running for us: [https://cloud.elastic.co](https://cloud.elastic.co). There's a free trial for 14 days since the moment we create the cluster; after the 14 days the cluster is shut down.
 
@@ -213,7 +213,7 @@ We can leave everything with the default options:
 - In the new version some other variables are shown: `Elasticsearch endpoint`, `Cloud ID`.
 - I copied everything to the non-committed/pushed file `elastic_cloud.txt`.
 
-####// Windows
+#### Windows
 
 Full, official guide: [Install Elasticsearch with .zip on Windows](https://www.elastic.co/guide/en/elasticsearch/reference/current/zip-windows.html).
 
@@ -231,10 +231,10 @@ To set them up:
 - Go to the extracted directory and start `elasticsearch`.
 
 ```powershell
-#// Elastic Search: go to extracted directory and run binary
+# Elastic Search: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 bin\elasticsearch.bat
-#// Unix: bin/elasticsearch
+# Unix: bin/elasticsearch
 ```
 
 :warning: **IMPORTANT**: save the ZIP archive, since we need to extract it every time we want a new node!
@@ -256,10 +256,10 @@ When we run `bin\elasticsearch.bat` for the first time a **cluster is created** 
 When the ES cluster is up and running, we launch Kibana:
 
 ```powershell
-#// Kibana: go to extracted directory and run binary
+# Kibana: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\kibana-8.14.3
 bin\kibana.bat
-#// Unix: bin/kibana
+# Unix: bin/kibana
 ```
 
 After a short moment, Kibaba is ready at port `5601`:
@@ -279,7 +279,7 @@ elasticsearch.hosts: ["https://localhost:9200"]
 
 ![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
 
-####// Unix: Mac OSX, Linux
+#### Unix: Mac OSX, Linux
 
 Full, official guide: [Install Elasticsearch from archive on Linux or MacOS](https://www.elastic.co/guide/en/elasticsearch/reference/current/targz.html).
 
@@ -291,46 +291,46 @@ In the case of MacOS, we need to deactivate the Gatekeeper to be able to run Kib
 cd .../path/where/kibana/directory/is
 xattr -d -r com.apple.quarantine kibana-8.14.3
 
-#// Then, we start Kibana
+# Then, we start Kibana
 cd kibana-8.14.3
 bin/kibana
 ```
 
-####// Docker
+#### Docker
 
 Full, official guide: [Install Elasticsearch with Docker](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html).
 
-####// Summary: How to Start Elastic Search
+#### Summary: How to Start Elastic Search
 
 ```powershell
-##// -- Terminal 1
-#// Elastic Search: go to extracted directory and run binary
+## -- Terminal 1
+# Elastic Search: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 bin\elasticsearch.bat
-#// Unix: bin/elasticsearch
-#// Wait until cluster up & running: "... current.health="GREEN"..."
-#// If provided, copy to .env
-#// - ELASTIC_USER
-#// - ELASIC_PASSWORD
-#// - ELASTIC_FINGERPRINT
-#// - ELASTIC_ENROLLMENT_TOKEN
-#// To get new ELASTIC_ENROLLMENT_TOKEN
-#// bin/elasticsearch-create-enrollment-token.bat -s kibana
-#// Also, after first time, add to .../kibana-8.14.3/config/kibana.yaml:
-#// elasticsearch.hosts: ["https://localhost:9200"]
+# Unix: bin/elasticsearch
+# Wait until cluster up & running: "... current.health="GREEN"..."
+# If provided, copy to .env
+# - ELASTIC_USER
+# - ELASIC_PASSWORD
+# - ELASTIC_FINGERPRINT
+# - ELASTIC_ENROLLMENT_TOKEN
+# To get new ELASTIC_ENROLLMENT_TOKEN
+# bin/elasticsearch-create-enrollment-token.bat -s kibana
+# Also, after first time, add to .../kibana-8.14.3/config/kibana.yaml:
+# elasticsearch.hosts: ["https://localhost:9200"]
 
-##// -- Terminal 2
-#// Kibana: go to extracted directory and run binary
+## -- Terminal 2
+# Kibana: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\kibana-8.14.3
 bin\kibana.bat
-#// Unix: bin/kibana
-#// Kibana Web UI: http://localhost:5601
-#// NOTE: It takes some minutes until Kibana is available...
-#// Use ELASTIC_USER & ELASIC_PASSWORD as credentials
+# Unix: bin/kibana
+# Kibana Web UI: http://localhost:5601
+# NOTE: It takes some minutes until Kibana is available...
+# Use ELASTIC_USER & ELASIC_PASSWORD as credentials
 
-##// -- Browser
-#// Kibana Web UI: http://localhost:5601
-#// Elastic Search API: https://localhost:9200
+## -- Browser
+# Kibana Web UI: http://localhost:5601
+# Elastic Search API: https://localhost:9200
 ```
 
 Troublesooting: If we get an error, make sure that `.../kibana-8.14.3/config/kibana.yaml` contains the line
@@ -356,7 +356,7 @@ curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELAST
 
 ```
 
-###// Basic Architecture: Cluster, Nodes, Documents, Indices
+### Basic Architecture: Cluster, Nodes, Documents, Indices
 
 Elastic Search is distirbuted and it consists of **nodes** within a **cluster**:
 
@@ -389,7 +389,7 @@ Documents are stored in **Indices**:
 
 ![Indices](./assets/indices.png)
 
-###// Inspecting a Cluster with the Console
+### Inspecting a Cluster with the Console
 
 ![Elastic Search Kibana Web UI](./assets/elastic_web_ui_kibana.png)
 
@@ -424,7 +424,7 @@ The query structure is
 For instance:
 
 ```bash
-#// Get cluster health: _cluster API, health Command
+# Get cluster health: _cluster API, health Command
 GET /_cluster/health
 ```
 
@@ -453,18 +453,18 @@ When we run that command (play button), we get back a `JSON`:
 Further examples:
 
 ```bash
-#// List all nodes: _cat API (Compact Aligned Text), nodes Command, v Query (verbose)
-#// In our case we see a single node and its IP + properties
+# List all nodes: _cat API (Compact Aligned Text), nodes Command, v Query (verbose)
+# In our case we see a single node and its IP + properties
 GET /_cat/nodes?v
 
-#// List indices
-#// We only have system indices, leading with a .
+# List indices
+# We only have system indices, leading with a .
 GET /_cat/indices?v
 ```
 
 ![Console](./assets/console.png)
 
-###// Interacting with the Cluster via cURL and Python
+### Interacting with the Cluster via cURL and Python
 
 We can interact with ES using its REST API, e.g., via `cURL`. We need to:
 
@@ -473,39 +473,39 @@ We can interact with ES using its REST API, e.g., via `cURL`. We need to:
 - use our user and PW credentials.
 
 ```powershell
-#// General structure
+# General structure
 cd /path/to/elasticsearch
 curl --cacert config/certs/http_ca.crt -u elastic:<YOUR_PASSWORD_HERE> [--insecure] -X <HTTP_METHOD> [-H ...] [-d ...] <URL+API+Command+Query>
-#// NOTE: Sometimes the certificate doesn't work,
-#// so we can add the flag --insecure.
-#// This bypasses the SSL certificate verification.
-#// That should not be done in production!
-#// The option -H is a header, often used with -d
-#// and -d is the data we send.
-#// Example (Windows needs to escape "):
-#// ... -H "Content-Type: application/json" -d '{"name":"John", "age":30}'
-#// ... -H "Content-Type: application/json" -d '{\"name\":\"John\", \"age\":30}'
+# NOTE: Sometimes the certificate doesn't work,
+# so we can add the flag --insecure.
+# This bypasses the SSL certificate verification.
+# That should not be done in production!
+# The option -H is a header, often used with -d
+# and -d is the data we send.
+# Example (Windows needs to escape "):
+# ... -H "Content-Type: application/json" -d '{"name":"John", "age":30}'
+# ... -H "Content-Type: application/json" -d '{\"name\":\"John\", \"age\":30}'
 
-#// Set variables in Powershell for easier and more secure use.
-#// To use them: $Env:ELASTIC_USER
+# Set variables in Powershell for easier and more secure use.
+# To use them: $Env:ELASTIC_USER
 $Env:ELASTIC_USER = "elastic"
 $Env:ELASTIC_PASSWORD = "..."
-#// Bash. To use them: $ELASTIC_USER
+# Bash. To use them: $ELASTIC_USER
 export ELASTIC_USER="elastic"
 export ELASTIC_PASSWORD="..."
 
-#// Example: Basic query to get general cluster info
+# Example: Basic query to get general cluster info
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200 --noproxy localhost
 
-#// Example: Get the index products (not created yet)
+# Example: Get the index products (not created yet)
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET -H "Content-Type: application/json" -d '{ \"query\": { \"match_all\": {} } }' https://localhost:9200/products/_search --noproxy localhost
-#// Bash: -d '{ "query": { "match_all": {} } }'
+# Bash: -d '{ "query": { "match_all": {} } }'
 
-#// Example: GET /_cat/nodes?v -> get all nodes
+# Example: GET /_cat/nodes?v -> get all nodes
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/nodes?v" --noproxy localhost
 
-#// Example: GET /_cat/indices?v -> list all indices
+# Example: GET /_cat/indices?v -> list all indices
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET "https://localhost:9200/_cat/indices?v" --noproxy localhost
 ```
 
@@ -523,12 +523,12 @@ load_dotenv()
 elastic_user = os.getenv("ELASTIC_USER")
 elastic_password = os.getenv("ELASIC_PASSWORD")
 
-###// -- requests
+### -- requests
 
-#// Define the URL
+# Define the URL
 url = "https://localhost:9200/_cat/nodes?v"
 
-#// Make the GET request
+# Make the GET request
 response = requests.get(
     url,
     auth=HTTPBasicAuth(elastic_user, elastic_password),
@@ -537,13 +537,13 @@ response = requests.get(
     proxies={"http": None, "https": None}  #// Bypass proxy
 )
 
-#// Print the response
+# Print the response
 print(response.text)
 
-#// Define the URL
+# Define the URL
 url = "https://localhost:9200/_cat/indices?v"
 
-#// Make the GET request
+# Make the GET request
 response = requests.get(
     url,
     auth=HTTPBasicAuth(elastic_user, elastic_password),
@@ -552,39 +552,39 @@ response = requests.get(
     proxies={"http": None, "https": None}  #// Bypass proxy
 )
 
-#// Print the response
+# Print the response
 print(response.text)
 
-###// -- elasticsearch
+### -- elasticsearch
 
 import warnings
 from urllib3.exceptions import InsecureRequestWarning
 from elasticsearch import Elasticsearch
 
-#// Suppress only the specific InsecureRequestWarning
+# Suppress only the specific InsecureRequestWarning
 warnings.simplefilter('ignore', InsecureRequestWarning)
 
-#// Create an instance of the Elasticsearch client
+# Create an instance of the Elasticsearch client
 es = Elasticsearch(
     ['https://localhost:9200'],
     basic_auth=(elastic_user, elastic_password),
     verify_certs=False  #// This disables SSL verification, similar to --insecure
 )
 
-#// Make a GET request to /_cat/nodes?v
+# Make a GET request to /_cat/nodes?v
 response = es.cat.nodes(format="json")
 
-#// Print the response
+# Print the response
 print(response)
 
-#// Make a GET request to /_cat/indices?v
+# Make a GET request to /_cat/indices?v
 response = es.cat.indices(format="json")
 
-#// Print the response
+# Print the response
 print(response)
 ```
 
-###// Building an Index
+### Building an Index
 
 This is my understanding of how an index works. The key idea is that we'd like to be able to search very quickly our documents.
 
@@ -601,7 +601,7 @@ On the other side we build the following structures:
 
 In the following, I explain my intuitions of each of them.
 
-####// Inverted Index
+#### Inverted Index
 
 An inverted index is a table which maps terms with document ids, positions and frequencies. A possible data structure for that would by a hash table (like a Python dictionary).
 
@@ -640,7 +640,7 @@ See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a s
 
 ![Inverted Index](./assets/inverted_index.png)
 
-####// B-Tree
+#### B-Tree
 
 A B-tree is a self-balancing tree data structure that maintains sorted data and allows for efficient insertion, deletion, and search operations. It is commonly used in databases and file systems. Key features:
 
@@ -707,7 +707,7 @@ In the previous list of Documents:
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
 
-####// BKD Tree, Block KD-tree
+#### BKD Tree, Block KD-tree
 
 A BKD tree (Block KD-tree) is a variant of the k-d tree (k-dimensional tree) optimized for indexing multi-dimensional data. It is particularly used in systems like Elasticsearch and Apache Lucene for efficient range searches and nearest neighbor queries in high-dimensional spaces.
 
@@ -726,7 +726,7 @@ Use Cases:
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation of a KD-tree and comparison to brute-force nearest vector search with numpy.
 
-####// Doc Values
+#### Doc Values
 
 Doc Values are columnar data of numerical fields. Columnar data is stored as an array, i.e., the values are contiguous in memory. That enables much faster operations in the entire field/column, such as sorting or aggregation operations, like average computation.
 
@@ -744,7 +744,7 @@ Then, if we want to compute the min/max, mean or similar values of a field/colum
 
 See [ml_search/search_examples.ipynb](./ml_search/search_examples.ipynb) for a simple implementation.
 
-###// Sharding and Scalability
+### Sharding and Scalability
 
 If our node is full, we can create a new one which will increase the storage capacity of the cluster. In the process, **Sharding** is used:
 
@@ -777,7 +777,7 @@ Note: when we create an index, we define a number of primar shards and keep it f
 
 Good rule of thumb: if we're going to have millions of documents, use a couple of shards. That number 5 was the default in the older versions.
 
-###// Replication and Snapshots
+### Replication and Snapshots
 
 Sometimes node fail; a way to enable fault-tolerance is to replicate shards. Elastic Search replicates shards by default: shards are copied, creating replica shards:
 
@@ -797,7 +797,7 @@ In addition to replication, Elastic Search also allows to take snapshots and bac
 - Snapshots can be taken at index level or for the entire cluster.
 - Snapshots are state dumps to a file; those files can be used to restore the cluster, if something goes wrong.
 
-####// Creating Indices
+#### Creating Indices
 
 - When we create an index, a replica is automaticaly generated
 - However, if we have a single node, that replica is unassigned, so the index is in "yellow" state, not "green" state.
@@ -806,22 +806,22 @@ In addition to replication, Elastic Search also allows to take snapshots and bac
 Here's some commands to create an index and inspect it:
 
 ```bash
-#// Create Index pages
+# Create Index pages
 PUT /pages
 
-#// Get list of all indices
-#// pages should appear, but in "yellow" status, 
-#// because its shard replica is not assigned to another node
+# Get list of all indices
+# pages should appear, but in "yellow" status, 
+# because its shard replica is not assigned to another node
 GET /_cat/indices?v
 
-#// Get list of all shards
-#// pages shoudl appear 2x, but the replica shard should be UNASSIGNED
+# Get list of all shards
+# pages shoudl appear 2x, but the replica shard should be UNASSIGNED
 GET /_cat/shards?v
 ```
 
 ![Replica shards](./assets/replica_shards.png)
 
-###// Adding Nodes to the Cluster
+### Adding Nodes to the Cluster
 
 Sharding for fault-tolerance and replication for increasing throughput can be done if we have at least 2 nodes. In managed cloud solutions, nodes are added automatically. However, in local deployments, we need to create nodes manually.
 
@@ -850,7 +850,7 @@ If we are running Elastic Search in a development environment, we can set new no
 
 I we don't add further nodes, we can continue, but the cluster and the shards/indices will be in "yellow" state, because they are not distributed across several nodes.
 
-###// Node Roles
+### Node Roles
 
 Depending what they're used for, nodes can have different roles:
 
@@ -869,9 +869,9 @@ The field `node.role` in the response table contains the initial letters of each
 
 ![Nodes](./assets/nodes.png)
 
-##// Managing Documents
+## Managing Documents
 
-###// Creating and Deleting Indices
+### Creating and Deleting Indices
 
 ```json
 #// Create an index
@@ -889,7 +889,7 @@ PUT /products
 }
 ```
 
-###// Indexing and Deleting Documents
+### Indexing and Deleting Documents
 
 Indexing a document means to create/add it into the index.
 
@@ -947,7 +947,7 @@ PUT /products_test/_doc/1
 }
 ```
 
-###// Retrieving Documents by ID
+### Retrieving Documents by ID
 
 ```json
 #// Retrieve Document by ID
@@ -977,7 +977,7 @@ Notes:
 - If the `id=100` would not exist, we'd get `"found":false`.
 - The `JSON` has many metadata fields; the actual document is in `_source`.
 
-###// Updating Documents
+### Updating Documents
 
 In reality, Documents are **inmutable** in Elastic Search. Under the hood, when we update a Document, we replace it with a new one which contains teh modifications. 
 
@@ -1013,7 +1013,7 @@ PUT /products/_doc/100
 }
 ```
 
-###// Scripted Updates
+### Scripted Updates
 
 We can write scripts in the `JSON` used to perform the update. The scripts go in a `script` object, which contains:
 
@@ -1104,7 +1104,7 @@ POST /products/_update/100
 }
 ```
 
-###// Upserts
+### Upserts
 
 *Upserting* means:
 
@@ -1128,7 +1128,7 @@ POST /products/_update/101
 }
 ```
 
-###// Routing Documents to Shards
+### Routing Documents to Shards
 
 In general we'll have
 
@@ -1153,7 +1153,7 @@ It is possible to chage the default Routing strategy, too.
 
 ![Routing](./assets/routing.png)
 
-###// How Elasticsearch Reads and Writes Document Data
+### How Elasticsearch Reads and Writes Document Data
 
 In general, shards are organized in **Replica Groups**: several copies of a primary shard grouped together. Thus, Routing selectes the Replica Group rather than the shard, if we have properly set the Replica Groups.
 
@@ -1176,7 +1176,7 @@ In addition, other sequence numbers are maintained within a Replica Group to spe
 - Local checkpoint: sequence number of each shard related to the las operation.
 - Global checkpoint: minimum sequene number among all replicas, i.e., last synchronization/alignment.
 
-###// Document Versioning and Optimistic Concurrency Control
+### Document Versioning and Optimistic Concurrency Control
 
 By default, every time a Document is updated, `_version` increases a unit; however, only the last version of the Document is stored.
 
@@ -1210,7 +1210,7 @@ POST /products/_update/100?if_primary_term=1&if_seq_no=5
 }
 ```
 
-###// Update and Delete by Query
+### Update and Delete by Query
 
 We can perform operations similar to the SQL `UPDATE WHERE` with the API `_update_by_query`.
 To that end
@@ -1254,7 +1254,7 @@ POST /products/_delete_by_query
 }
 ```
 
-###// Batch or Bulk Processing
+### Batch or Bulk Processing
 
 We can use the **Bulk API** (`_bulk`) to process multiple Documents in batch.
 
@@ -1328,7 +1328,7 @@ GET /products/_search
 }
 ```
 
-####// Bulk/Batch Processing with cURL
+#### Bulk/Batch Processing with cURL
 
 `cURL` commands to ingest [`products-bulk.json`](./products-bulk.json) with and without certificate:
 
@@ -1396,9 +1396,9 @@ response = requests.post(
 print(response.text) #// {"errors":false,"took":155,"items":[{"index":{"_index":"products","_id":"...
 ```
 
-##// Mapping & Analysis
+## Mapping & Analysis
 
-###// Introduction to Analysis
+### Introduction to Analysis
 
 When we index a Document, it is **analyzed**. **Analysis** is referred to as **text analysis**. ES performs an analysis of the text/sources, such that the content in `_source` is not really used during the search, but the analyzed/processed text. An analyzer has 3 building blocks:
 
@@ -1420,7 +1420,7 @@ ES ships with built-in analyzers and we can combine them as we please. The stand
 
 ![Standard Analyzer](./assets/standard_analyzer.png)
 
-###// Using the Analysis API
+### Using the Analysis API
 
 We can run the analyzers in our text with the `_analyze` API: 
 
@@ -1538,7 +1538,7 @@ POST /_analyze
 }
 ```
 
-###// Understanding Inverted Indices
+### Understanding Inverted Indices
 
 See the section [Inverted Index](#inverted-index).
 
@@ -1552,7 +1552,7 @@ However, not only inverted indices are used for search; inverted indices are pri
 - B-Trees and BKD Trees for numeric data.
 - Doc Values for aggregation operations.
 
-###// Introduction to Mapping
+### Introduction to Mapping
 
 A mapping is the definition of the structure of a Document, i.e., **fields and types**; it is equivalent to a table schema in a relational DB.
 
@@ -1563,7 +1563,7 @@ Mappings can be:
 - Explicit: we define them ourselves.
 - Implicit: ES generates mappings when we index Documents using our inputs.
 
-###// Data Types
+### Data Types
 
 There are many [field data types](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html). 
 
@@ -1609,7 +1609,7 @@ Then, `keyword` fields can be used for fast filtering which are the previous nec
 
 Full-text searches are performed in `text` fields, and **the query text doesn't need to match exactly** the indexed text. The fields with `text` are ingested into inverted indices; each field has an inverted index.
 
-###// Type Coercion
+### Type Coercion
 
 When we index the first document to an index which was not created yet, the mappings (i.e., the schema, field-type pairs) are dynamically created.
 
@@ -1655,7 +1655,7 @@ GET /coercion_test/_doc/2
 DELETE /coercion_test
 ```
 
-###// Arrays
+### Arrays
 
 There are no `array` types because every type can be an `array`!
 
@@ -1676,7 +1676,7 @@ Also, note that arrays can contain nested arrays; in that case, they are flatten
 
 Finally, **arrays of objects need to be of type `nested` if we want to query the objects independently, as explained.**
 
-###// Adding Explicit Mappings and Retrieving
+### Adding Explicit Mappings and Retrieving
 
 In this section, a mapping is created, i.e., the equivalent of a table schema. The syntax is very simple, we defined fields with their types inside `mappings.properties` and if we have an object, we nest `properties` within it:
 
@@ -1734,7 +1734,7 @@ PUT /reviews/_doc/1
 }
 ```
 
-####// Dot Notation
+#### Dot Notation
 
 Another way of adding an object is to use the *dot-notation*, which consists in defining object fields flattened by using `object_name.field_name` keys:
 
@@ -1761,7 +1761,7 @@ DELETE /reviews_dot_notation
 This format is probably a bit easier.
 This *dot-notation* is not exclusive to creating the mappings, it can be used any time!
 
-####// Retrieving Mappings
+#### Retrieving Mappings
 
 ```json
 #// Retrieving mappings for the `reviews` index
@@ -1775,7 +1775,7 @@ GET /reviews/_mapping/field/content
 GET /reviews/_mapping/field/author.email
 ```
 
-###// Extending Mappings to Existing Indices: Adding New Fields
+### Extending Mappings to Existing Indices: Adding New Fields
 
 Case: We already have an Index and we'd like to add a field to it. We can do that with the `_mapping` API, by simply adding the field in the `properties`.
 
@@ -1801,7 +1801,7 @@ GET /reviews/_mapping
 
 However, it is usually not possible to change/modify existing mappings or their fields. The alternative is to create new mappings and `_reindex` the old index to the new one.
 
-###// Date Type
+### Date Type
 
 Dates can be specified as:
 
@@ -1894,13 +1894,13 @@ GET /reviews/_search
 }
 ```
 
-###// Missing Fields
+### Missing Fields
 
 All fields are optional, in contrast to relational DBs. Even when we explicitly define a mapping with some fields, we don't have to use them. Also, when searching, missing fields are ignored.
 
 This allows for more felxibility, but it enforces additional validation/checks at the application level.
 
-###// Overview of Mapping Parameters
+### Overview of Mapping Parameters
 
 Apart from adding fields and their types to the mappings, we can tune some other [**Mapping parameters**](Mapping parameters):
 
@@ -1921,7 +1921,7 @@ Apart from adding fields and their types to the mappings, we can tune some other
 
 ![Copy to](./assets/copy_to.png)
 
-###// Updating Existing Mappings: Reindexing
+### Updating Existing Mappings: Reindexing
 
 We have seen how new fields can be added to existing mappings. However, usually it is not possible to modify/update existing mapping fields. If we want to do that, the alternative is to create a new index and reindex the old one to it with the `_reindex` API.
 
@@ -2135,7 +2135,7 @@ POST /_reindex
 }
 ```
 
-###// Field Aliases
+### Field Aliases
 
 Reindexing to rename a field is a bad idea; instead, we can use field aliases. Alias fields can be used as regular fields and the original fields are unaffected; that's because queries with aliases are translated into queries with the original fields before being executed.
 
@@ -2180,7 +2180,7 @@ GET /reviews/_search
 }
 ```
 
-###// Multi-Field Mappings
+### Multi-Field Mappings
 
 It is possible to add two types to a field in some cases; this is frequently done with key text fields:
 
@@ -2267,7 +2267,7 @@ GET /multi_field_test/_search
 DELETE /multi_field_test
 ```
 
-###// Index Templates
+### Index Templates
 
 We can create [index templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-template.html) that can be used to apply settings and mappings whenever a new index is created, if the name matches a pattern. We use the API `_index_template` for that.
 
@@ -2401,7 +2401,7 @@ Final notes:
   - `synthetics-*-*`
   - `profiling-*-*`
 
-###// Introduction to Dynamic Mappings
+### Introduction to Dynamic Mappings
 
 Dynamic mapping refers to the fact that the index is automatically created when we try to ingest a Document in an index which has not been created. The fields and types are automatically inferred and the mapping is automatically created.
 
@@ -2447,7 +2447,7 @@ GET /people/_mapping
 DELETE /people
 ```
 
-###// Configuring Dynamic Mappings
+### Configuring Dynamic Mappings
 
 We can configure daynamic mapping in several ways:
 
@@ -2543,7 +2543,7 @@ POST /computers/_doc
 }
 ```
 
-###// Dynamic Templates
+### Dynamic Templates
 
 Another way of configuring dynamic mappings are dynamic templates, defined inside the key `dynamic_templates`. We basically define a mapping for any new field with a concrete type, e.g., every whole number needs to be parsed as a `long`. Concretely, a `dynamic_template` has these components:
 
@@ -2699,7 +2699,7 @@ POST /test_index/_doc
 }
 ```
 
-###// Mapping Recommendations
+### Mapping Recommendations
 
 Best practices:
 
@@ -2711,7 +2711,7 @@ Best practices:
 - Set `norms: false` if we don't need relevance scoreing.
 - Set `index: false` if we won't filter values.
 
-###// Stemming and Stop Words
+### Stemming and Stop Words
 
 A word (noun, verb, etc.) can change its root form depending on 
 
@@ -2730,13 +2730,13 @@ Since we create inverted indices using unique terms, this leads to many useless 
 
 Similarly, **stop words** are the most common words that are filtered out at any analysis, because they provide little to no value to relevance scoring. It was common to remove them in ES, but it's not that usual anymore, because the relevance ranking algorithms in ES have become better.
 
-###// Analyzers and Search Queries
+### Analyzers and Search Queries
 
 When we ingest/index a document, its text fields are processed by the analyzer, which performs the **tokenization** and **stemming** of the words/symbols.
 
 When we run a text search query, that query is processed by the same analyzer by default; otherwise, the queries wouldn't work...
 
-###// Built-in Analyzers
+### Built-in Analyzers
 
 There are [pre-configured analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html):
 
@@ -2757,7 +2757,7 @@ There are [pre-configured analyzers](https://www.elastic.co/guide/en/elasticsear
   - lowercase
 - [Language specific analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-lang-analyzer.html), e.g., `english`.
 
-###// Custom Analyzer
+### Custom Analyzer
 
 We can create custom analyzers, similar to the [built-in analyzers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html). These are created for each index, usually when creating the index; however, we can also add them later, as shown in the next section.
 
@@ -2849,7 +2849,7 @@ PUT /analyzer_test
 }
 ```
 
-###// Adding/Updating Analyzers to/from Existing Indices
+### Adding/Updating Analyzers to/from Existing Indices
 
 When we have already created an index but we'd like to add a custom analyzer to it, we can do it via the `_settings` API. It uses the same syntax/configuration as when creating an index and adding a custom analyzer to it (i.e., previous section).
 
@@ -2918,7 +2918,7 @@ GET /analyzer_test/_settings
 POST /analyzer_test/_update_by_query?conflicts=proceed
 ```
 
-##// Searching for Data
+## Searching for Data
 
 Search is performed with the API `_search`:
 
@@ -3021,45 +3021,45 @@ The following JSON is returned. Note the fields:
 }
 ```
 
-###// Term-Level Queries
+### Term-Level Queries
 
 
 
-##// Joining Queries
-
-TBD.
-
-:construction:
-
-##// Controlling Query Results
+## Joining Queries
 
 TBD.
 
 :construction:
 
-##// Aggregations
+## Controlling Query Results
 
 TBD.
 
 :construction:
 
-##// Improving Search Results
+## Aggregations
 
 TBD.
 
 :construction:
 
-##// Kibana
+## Improving Search Results
+
+TBD.
+
+:construction:
+
+## Kibana
 
 See [`./kibana/`](./kibana/).
 
-##// Logstash
+## Logstash
 
 TBD.
 
 :construction:
 
-##// License
+## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
 

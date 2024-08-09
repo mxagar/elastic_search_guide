@@ -95,6 +95,8 @@ Table of contents:
     - [Querying by Field Existence](#querying-by-field-existence)
     - [Intorduction to Full Text Queries](#intorduction-to-full-text-queries)
     - [Match Query: Full-Text Query](#match-query-full-text-query)
+    - [Relevance Scoring](#relevance-scoring)
+    - [Searching Multiple Fields](#searching-multiple-fields)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3327,6 +3329,15 @@ GET /products/_search
   }
 }
 ```
+
+### Relevance Scoring
+
+When we use term-level queries, the relevance score of all results is `_score = 1.0` (either a document matches or not). But when we perform a full-text search, we care about *how well it matches*, i.e., the relevance, which is used for sorting.
+
+![Relevance scoring](./assets/relevance_scoring.png)
+
+### Searching Multiple Fields
+
 
 
 ## Joining Queries

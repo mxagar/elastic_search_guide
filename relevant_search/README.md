@@ -50,7 +50,51 @@ Table of contents:
   - Payloads: additional information associated to text, used for ranking; e.g., part of speech, external term values, etc.
   - Stored fields: real source values, often stored somewhere else.
   - Doc values
-
+- ETL process in search: Extract, Transform, Load
+  - Extract: retrieve documents from source
+    - Best case: fom relational DB
+    - Worst case: MS Word, PDFs
+    - Own the extraction process!
+  - Transform: enrich, analyses
+    - Enrich = augment with info for relevant search
+      - clean
+      - augment with ML features like sentiment, cluster
+      - merge external data, if available: metadata, etc.
+    - Analysis: tokenization, filtering, etc.
+      - We can tokenize also geolocations
+      - Query and indexing analysis ust be the same
+      - Be familiar with the analysis to improve search
+      - Components of analysis
+        - character filtering: HTML tags
+        - tokenization: usually, standard tokenizer
+        - token filtering: stop words
+      - Though: stemming maybe makes sense when you're creating inverted indices, but not so much when you're capturing the entire meaning; same for stop words
+      - Payloads: metadata associated with tokens
+        - term positions
+        - term offsets: for fast highlights
+        - beware: it increases storage needs!
+  - Load: index processed documents, i.e., place data into data structures
+    - We need to decide which fields to index and which not!
+      - Only indexed files will be searchable
+    - Text fields are indexed in inverted indices
+      - Rest of field types are indexed in other data structures
+    - Non-indexed fields are stored, unaltered.
+- Document search and retrieval
+  - Boolean search: AND (intersection), OR (union), NOT
+    - "dress shoe" -> "dress" AND "show", both need to appear
+  - However, in Apache Lucene and related, instead of Boolean operator, other are used: MUST, MUST_NOT, SHOULD.
+    - MUST: has to have a match in document
+    - MUST_NOT: documents that match will be excluded, even if they comply with other clauses
+    - SHOULD: might or might not have a match
+  - Example:
+    ```
+    black +cat -dog (Lucene notation)
+        SHOULD black MUST cat MUST_NOT dog
+    (cat or (black AND cat)) AND NOT dog
+        equivalent boolean notation
+    ```
+  - Positional and phrase matching
+    
 ## Chapter 3: Debugging your first relevance problem
 
 

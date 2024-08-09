@@ -93,6 +93,8 @@ Table of contents:
     - [Range Searches](#range-searches)
     - [Prefixes, Wildcards, Regex](#prefixes-wildcards-regex)
     - [Querying by Field Existence](#querying-by-field-existence)
+    - [Intorduction to Full Text Queries](#intorduction-to-full-text-queries)
+    - [Match Query: Full-Text Query](#match-query-full-text-query)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3257,6 +3259,70 @@ GET /products/_search
           }
         }
       ]
+    }
+  }
+}
+```
+
+### Intorduction to Full Text Queries
+
+In contrast to term-level searches (which look for exact matches), **full-text searches** refer to searches with **unstructured** text data, such as website articles or similar long-form texts in which we don't really know which data is contained.
+
+For instance, in the following image/example, in a document which contains an article with several fields (`title, published_at, author, body`), the text `shard` is searched for.
+
+![Full text search](./assets/full_text_search.png)
+
+The **queries in full-text search are *analyzed***. Thus, the analyzer must be the same as the one used when indexing the documents. This is the main distinction as compared to term-level queries, which are not analyzed.
+
+### Match Query: Full-Text Query
+
+For term-level searches we use the `query` object `term`; for full-text searches we use the `query` object `match`.
+
+```json
+// For term-level searches we use 
+// the `query` object `term`.
+// For full-text searches we use 
+// the `query` object `match`
+// This returns many products (12)
+// which have a name containing "pasta"
+// or a derivate.
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": "pasta"
+      //"name": "PASTA" 
+      // This would result in the same, 
+      // because of lowercasing in the analysis...
+    }
+  }
+}
+
+// We can search for documents
+// with multiple words simply
+// by specifying them in a string
+// Recall that the string is analyzed: tokenized, etc.
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": "pasta chicken"
+    }
+  }
+}
+// If we have several search tokens
+// the default operator is OR,
+// i.e., not all tokens need to appear
+// We can change that with "operator": "and"
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "pasta chicken",
+        // require all tokens to appear in results
+        "operator": "and"
+      }
     }
   }
 }

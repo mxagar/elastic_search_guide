@@ -1130,6 +1130,7 @@ Contents:
 - Range searches
 - Searching with Prefixes, Wildcards, Regex
 - Querying by Field Existence
+- Match Query: Full-Text Query
 
 ```json
 // --- Basic search: search all
@@ -1337,4 +1338,55 @@ GET /products/_search
     }
   }
 }
+
+// --- Match Query: Full-Text Query
+
+// For term-level searches we use 
+// the `query` object `term`.
+// For full-text searches we use 
+// the `query` object `match`
+// This returns many products (12)
+// which have a name containing "pasta"
+// or a derivate.
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": "pasta"
+      //"name": "PASTA" 
+      // This would result in the same, 
+      // because of lowercasing in the analysis...
+    }
+  }
+}
+
+// We can search for documents
+// with multiple words simply
+// by specifying them in a string
+// Recall that the string is analyzed: tokenized, etc.
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": "pasta chicken"
+    }
+  }
+}
+// If we have several search tokens
+// the default operator is OR,
+// i.e., not all tokens need to appear
+// We can change that with "operator": "and"
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "pasta chicken",
+        // require all tokens to appear in results
+        "operator": "and"
+      }
+    }
+  }
+}
+
 ```

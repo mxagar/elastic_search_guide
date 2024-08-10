@@ -57,22 +57,22 @@ Table of contents:
     - Own the extraction process!
   - Transform: enrich, analyses
     - Enrich = augment with info for relevant search
-      - clean
-      - augment with ML features like sentiment, cluster
-      - merge external data, if available: metadata, etc.
+      - Clean
+      - Augment with ML features like sentiment, cluster
+      - Merge external data, if available: metadata, etc.
     - Analysis: tokenization, filtering, etc.
       - We can tokenize also geolocations
       - Query and indexing analysis ust be the same
       - Be familiar with the analysis to improve search
       - Components of analysis
-        - character filtering: HTML tags
-        - tokenization: usually, standard tokenizer
-        - token filtering: stop words
+        - Character filtering: HTML tags
+        - Tokenization: usually, standard tokenizer
+        - Token filtering: stop words
       - Though: stemming maybe makes sense when you're creating inverted indices, but not so much when you're capturing the entire meaning; same for stop words
       - Payloads: metadata associated with tokens
-        - term positions
-        - term offsets: for fast highlights
-        - beware: it increases storage needs!
+        - Term positions
+        - Term offsets: for fast highlights
+        - Beware: it increases storage needs!
   - Load: index processed documents, i.e., place data into data structures
     - We need to decide which fields to index and which not!
       - Only indexed files will be searchable
@@ -93,8 +93,30 @@ Table of contents:
     (cat or (black AND cat)) AND NOT dog
         equivalent boolean notation
     ```
-  - Positional and phrase matching
-    
+  - Positional and phrase matching: position of word might carry semantic meaning
+    - We can perform a phrase query: "dress shoes"
+    - First all documents with "dress" and "shoes" returned
+    - Then those items that have no adjacent terms discarded
+  - Sorting, ranked results and relevance
+    - Users can often filter results: price, brand, etc.
+    - Results are listed according to an order
+      - Number-based
+      - Lexicographical
+      - Relevance: but what dictates relevance?
+    - Relevance defined by a **ranking function**
+      - What is important to the user? (e.g., hits for their search)
+      - What is important to the company? (e.g., high margin products)
+    - Example **ranking function**
+      - We are looking for the movie "Back to the future".
+      - We search for it: fields `title` and `description` are used to find the tokens.
+        - Usually, in a search, several fields are used.
+        - Sometimes, even several searches are performed under the hood: regular ones, and extra ones which incorporate common misspellings.
+      - For each field, the TF-IDF of each set of tokens is computed.
+      - All field TF-IDF values are summed and multiplied by a field weight.
+      - Then, field sums are summed and multiplied by the value of the `popularity` field; i.e., a *boost*.
+      - The resulting **score** is used to rank the document (i.e., movie), 
+
+
 ## Chapter 3: Debugging your first relevance problem
 
 

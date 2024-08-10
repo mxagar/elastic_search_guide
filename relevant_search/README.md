@@ -5,6 +5,7 @@ These are my notes of the book [Relevant SEARCH, by Doug Turnbull and John Berry
 Table of contents:
 
 - [Relevant Search: Notes](#relevant-search-notes)
+  - [Setup](#setup)
   - [Chapter 1: The search relevance problem](#chapter-1-the-search-relevance-problem)
   - [Chapter 2: Search under the hood](#chapter-2-search-under-the-hood)
   - [Chapter 3: Debugging your first relevance problem](#chapter-3-debugging-your-first-relevance-problem)
@@ -16,6 +17,10 @@ Table of contents:
   - [Chapter 9: Designing a relevance-focused search application](#chapter-9-designing-a-relevance-focused-search-application)
   - [Chapter 10: The relevance-centered enterprise](#chapter-10-the-relevance-centered-enterprise)
   - [Chapter 11: Semantic and personalized search](#chapter-11-semantic-and-personalized-search)
+
+## Setup
+
+Github repository with code: [o19s/relevant-search-book](https://github.com/o19s/relevant-search-book).
 
 ## Chapter 1: The search relevance problem
 

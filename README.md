@@ -291,18 +291,72 @@ elasticsearch.hosts: ["https://localhost:9200"]
 
 Full, official guide: [Install Elasticsearch from archive on Linux or MacOS](https://www.elastic.co/guide/en/elasticsearch/reference/current/targz.html).
 
+**The guide I used: [Beginner's guide to running Elasticsearch and Kibana v8+ Locally (macOS/Linux and Windows)](https://dev.to/lisahjung/beginners-guide-to-running-elasticsearch-and-kibana-v8-locally-macoslinux-and-windows-5820).**
+
 Very similar setup as with Windows: download, uncompress, run scripts, copy credentials, etc.
 
 In the case of MacOS, we need to deactivate the Gatekeeper to be able to run Kibana. So before running `bin/kibana`:
 
 ```bash
-cd .../path/where/kibana/directory/is
-xattr -d -r com.apple.quarantine kibana-8.14.3
+cd .../path/where/es/directory/is
 
-# Then, we start Kibana
-cd kibana-8.14.3
+# Download ElasticSearch and unpack it: https://www.elastic.co/downloads/elasticsearch
+# Set complete folder runnable for Mac
+xattr -d -r com.apple.quarantine elasticsearch-8.15.0
+cd elasticsearch-8.15.0
+bin/elasticsearch
+# Take and copy to .env
+# ELASTIC_USER="elastic"
+# ELASTIC_PASSWORD
+# ELASTIC_FINGERPRINT
+# ELASTIC_ENROLLMENT_TOKEN
+
+# Download Kibana and unpack it: https://www.elastic.co/downloads/kibana
+# Set complete folder runnable for Mac
+xattr -d -r com.apple.quarantine kibana-8.15.0
+# In a  new Terminal
+cd kibana-8.15.0
 bin/kibana
+# Wait for
+#   Kibana has not been configured.
+#   Go to http://localhost:5601/?code=xxx to get started.
+# Open the website
+# Paste: ELASTIC_FINGERPRINT
+# Introduce: ELASTIC_USER, ELASTIC_PASSWORD
 ```
+
+<!--
+Maybe, some changes/additions need to be done in the configuration YAMLs of Kibana and/or ElasticSearch.
+
+For instance, in `config/kibana.yml`:
+
+```yaml
+...
+# If you are receiving HTTP traffic on a HTTPS channel
+elasticsearch.hosts: ["https://localhost:9200"]
+
+# Create encryption keys
+# bin/kibana-encryption-keys generate  
+xpack.security.encryptionKey: "your_security_encryption_key"
+xpack.reporting.encryptionKey: "your_reporting_encryption_key"
+xpack.encryptedSavedObjects.encryptionKey: "your_saved_objects_encryption_key"
+elasticsearch.ssl.verificationMode: none
+# Add elastic user
+elasticsearch.username: "elastic"
+elasticsearch.password: "your_password"
+...
+```
+
+In `config/elasticsearch.yml`:
+
+```yaml
+...
+# If your disk is quite full
+cluster.routing.allocation.disk.watermark.low: 90%
+cluster.routing.allocation.disk.watermark.high: 95%
+cluster.info.update.interval: 1m
+```
+-->
 
 #### Docker
 

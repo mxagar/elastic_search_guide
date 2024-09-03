@@ -9,6 +9,7 @@ Table of contents:
   - [Chapter 1: The search relevance problem](#chapter-1-the-search-relevance-problem)
   - [Chapter 2: Search under the hood](#chapter-2-search-under-the-hood)
   - [Chapter 3: Debugging your first relevance problem](#chapter-3-debugging-your-first-relevance-problem)
+    - [Key points](#key-points)
   - [Chapter 4: Taming tokens](#chapter-4-taming-tokens)
   - [Chapter 5: Basic Multi-field search](#chapter-5-basic-multi-field-search)
   - [Chapter 6: Term-centric search](#chapter-6-term-centric-search)
@@ -124,7 +125,91 @@ Github repository with code: [o19s/relevant-search-book](https://github.com/o19s
 
 ## Chapter 3: Debugging your first relevance problem
 
+This chapter is about debugging two key aspects to **relevance**: *matching* and *ranking*.
 
+It makes reference to code in the repository [`o19s/relevant-search-book`](https://github.com/o19s/relevant-search-book), which is the official repository of the book. However, the Python and notebook versions are quite old.
+
+[The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) is used, which contains per movie:
+
+- prose text: overviews, reviews, synopsis, etc.
+- shorter text: title, director & actors name
+- numerical attributes: user ratings, revenue, number of awards
+- movie release dates
+
+:warning: Note: the linked Kaggle version seems to be another one.
+
+First, the REST API of Elasticsearch is used to (bluk) index the movie entries after being loaded.
+Then, a search query is run using the `multi_match` query and `requests` for connecting to Elasticsearch:
+
+```python
+# We want to look for the movie "Space Jam", but we don't remember its name
+usersSearch = "basketball with cartoon aliens"
+
+# Query DSL
+query = {
+    'query': {
+        'multi_match': { 
+            'query': usersSearch,
+            # Two fields are searched, overview is boosted to be 10x more important
+            'fields': ['title^10', 'overview'],
+        }
+    }
+}
+
+# Run search via REST
+search(query) # requests.get('http://localhost:9200/tmdb/movie/_search', data=json.dumps(query))
+```
+
+This query returns unexpected results, i.e., non-desired movies. The rest of the chapter is about what happened and how we can improve our search.
+
+### Key points
+
+To debug **query matching**, we need to check:
+
+- **Query parsing**: how the query DSL is translated to the matching strategy
+  - We can ask Elasticsearch to explain the parsed query: `/tmdb/movie/_search -> /tmdb/movie/_validate/query?explain`
+  - That way, the underlying Lucene operations are shown
+- **Analysis**: token creation of the query and the document text
+  - The document and the query must be analyzed by the same tokenizer
+  - We can run the analyzer with `/tmdb/_analyze?analyzer=standard&format=yaml`
+  - We can see that the analyzer often takes into account the relative position of the terms and stores them to the inverted index
+  - The relative position of some irrelevant tokens can lead to spurious results!
+  - Common best practice: If the text is in English, use `english` analyzer instead of the `standard` to stemming and remove stop-words.
+    ```python
+    mappingSettings = {
+        'movie': {
+            'properties': {
+                'title': {
+                    'type': 'string',
+                    'analyzer': 'english'
+                },
+                'overview': {
+                    'type': 'string',
+                    'analyzer': 'english'
+                }
+            }              
+        }
+    }
+    ```
+
+To debug **ranking**, we need to check:
+
+- Calculation of individual match scores
+  - We can add `explain` in the query to get a detailed and nested list of scores for each term; the outermost values are the sum of the innermost ones
+    ```python
+    query = {
+        'explain': True, # <--
+        'query': {
+            'multi_match': { 
+                'query': usersSearch,
+                # Two fields are searched, overview is boosted to be 10x more important
+                'fields': ['title^10', 'overview'],
+            }
+        }
+    }
+
+    ```
+- How these match scores factor into the document's overall relevance score
 
 ## Chapter 4: Taming tokens
 

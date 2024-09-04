@@ -194,7 +194,7 @@ To debug **query matching**, we need to check:
 
 To debug **ranking**, we need to check:
 
-- Calculation of individual match scores
+- Calculation of **individual match scores**
   - We can add `explain` in the query to get a detailed and nested list of scores for each term; the outermost values are the sum of the innermost ones
     ```python
     query = {
@@ -209,36 +209,107 @@ To debug **ranking**, we need to check:
     }
 
     ```
-- How these match scores factor into the document's overall relevance score
+  - Relevance scoring uses theory-inspired heuristics that work well in practice.
+  - For each document, document-term matrices can be built following the *bag-of-words* scheme.
+    - Then, each document (i.e., movie), is represented by sparse vectors.
+  - Similarly, properties could be derived for movies, like *alien-ness, cartoon-ness*, etc.
+  - Then, the score is the dot-product between the query vector and the movie vectors, normalized: similarity.
+  - In practice, a modified version of TF-IDF or BM25 are used to compute vectors
+    - TF-IDF
+      - TF: Term-Frequency: how frequently a term occurs in a field
+      - IDF: Inverse Document Frequency: how rare (thus, valuable) a matched term is
+      - The modification is applied by using 
+        - `TF' = sqrt(TF)`
+        - `IDF'`: `log` in the `IDF` formula
+        - `TF-IDF = TF' * IDF' * (1/sqrt(fieldLength))`
+    - BM25 is similar to TF-IDF, but more robust and usually the go-to; the TF part is changed:
+      - A saturation point is added.
+      - The average document length is considered: above average weighted down, below boosted.
+- **How these match scores factor** into the document's overall relevance score with respect to the **query**
+  - A query has its `queryWeight`, which is composed by two factors:
+    - Boosting: the `^k` 
+    - Normalization: it attempts to make scores of different fields comparable, but fails (often discussed to be removed)
+  - Boosting places different weights to different terms, and it implicitly considers them comparable, BUT we should not compare scores of different fields, because they belong to different universes!
+    - A boost of `[term_1^k, term_2]` doesn't mean `term_1` is `k x` more important, because their weights are different! Therefore, we should always first check the term weights and then decide a boosting strategy.
+      - Factors that affect weights: important descriptions present, field length, etc.
+    - In the example, it makes much more sense to use: `[term_1, term_2^(1/k)]`.
 
 ## Chapter 4: Taming tokens
 
-
+- Tokenization is effectively the creation of useful features that capture user meaning/intent.
+- Fundamental measures for relevance:
+  - **Precision**: from detected and shown in the result, which are really relevant? (relevant in result)
+  - **Recall** (**= Sensitivity**): from all items in corpus/index, which relevant ones are shown in the result? (relevant in index and shown in result)
+  - An, also: **Specificity**: how well irrelevant documents are excluded; complement of recall for negative instances.
+  - Precision and Recall are the fundamental, and are often at odds. They can be controlled by loosening/tightening the search criteria/terms, but they often compete against each other. 
+- General strategy to get good Precision and Recall:
+  - First, increase RECALL: This can be done in many ways, for instance:
+    - Use stemming in the analysis: that way tokens are reduced to their basic form that captures the meaning; if the user queries 'running', documents that contain anything related to 'run' will be detected.
+      - Thus, if the text is in English, try to use the `english` analyzer, which contains the `english_stemmer` and it removed the `english_stop` words.
+      - Increasing the recall this way often decreases the precision, because irrelevant documents will be listed, BUT we'll deal with that later.
+    - We could try the phonetic analyzer: this is even more extreme, and not always recommended; tokens are reduced to their spoken symbol, removing vowels (except the first) and double consonants.
+      - Effect: misspellings can be handled; recall increases, precision decreases.
+  - Second, increase PRECISION by improving the ranking score of the most relevant tokens
+    - Documents that contain a search term several times score higher; stemming achieves this.
+    - When several terms are in the query, multiple matches are more prominently scored.
+- Analysis (tokenizing) strategies: they affect both precision and recall
+  - Delimiters
+    - Acronyms: words like `I.B.M` can be tokenized to `ibm` by using `word_delimiter` filter
+    - Phone numbers can be parsed with regex patterns and tokenized to several terms, e.g., with/out country code, with/out region code
+  - Synonyms: defining synonyms helps capture situations in which the user expresses themselves in another way
+    - We can create and use a filter (in the specific field) which defiles a `synonyms` field, e.g. `"dress show,dress shoes => dress_shoe, shoe"`
+  - In general, there's a common strategy which consists in using different analyzers during indexing and query: **asymmetric analysis**
+    - During **indexing**, we can tokenize more versions of the term: the **concrete + general / related** (e.g., synonym)
+      - Example: `fuji -> fuji, apple, fruit`
+    - During **query**, we tokenize the **concrete** only
+      - Example: `fuji -> fuji`
+      - If our query is concrete (e.g., `fuji`), the matches will find the documents which contain it.
+      - If our query is more general (e.g., `apple`), documents with both general and concrete terms will be delivered!
+    - Consider that general terms/tokens appear in more documents, which increases increased index size and requires maybe some TF-IDF normalization.
+    - Concrete and general terms create implicitly a taxonomy which can be exploited.
+  - Be mindful of the DSL query methods we use:
+    - `match` performs analysis
+    - `term` does not perform analysis
+    - `keyword` treats the text as-is
+    - ... 
+  - Not only text can be tokenized
+    - Numerical data: dates are often tokenized using asymmetric tokenization/analysis:
+      - `1945 -> 1, 19, 194, 1945`
+    - Geographic data is tokenized using *Z-encoding*: map divided in ABCD quadrants recursively, and again asymmetric tokenization/analysis can be used:
+      - `BCDBC -> BCDBC, BCDB, BCD, BC, B`
+    - Melodies can be tokenized using the *Parsons Code for Melodic Contours*
+      - Code (we would require an audio processing which encodes a whistle to this code):
+        - First note `*`
+        - If next same pitch `R` (repeat), upper `U`, lower `D` (down).
+        - Example: `*URDR`
+      - Then, tokenization happens in n-grams: take token and break it into all possible tokens of length n contained in the string.
+      - Result: the whistling of one part can be detected in the index, which stores encoded songs!
 
 ## Chapter 5: Basic Multi-field search
 
-
+TBD.
 
 ## Chapter 6: Term-centric search
 
-
+TBD.
 
 ## Chapter 7: Shaping the relevance function
 
-
+TBD.
 
 ## Chapter 8: Providing relevance feedback
 
-
+TBD.
 
 ## Chapter 9: Designing a relevance-focused search application
 
-
+TBD.
 
 ## Chapter 10: The relevance-centered enterprise
 
-
+TBD.
 
 ## Chapter 11: Semantic and personalized search
 
+TBD.
 

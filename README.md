@@ -365,7 +365,10 @@ Full, official guide: [Install Elasticsearch with Docker](https://www.elastic.co
 #### Summary: How to Start Elastic Search
 
 ```powershell
-## -- Terminal 1
+## If already installed and used,
+## set variables in all Terminals
+
+## -- Terminal 1 (set variables)
 # Elastic Search: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 bin\elasticsearch.bat
@@ -381,7 +384,7 @@ bin\elasticsearch.bat
 # Also, after first time, add to .../kibana-8.14.3/config/kibana.yaml:
 # elasticsearch.hosts: ["https://localhost:9200"]
 
-## -- Terminal 2
+## -- Terminal 2 (set variables)
 # Kibana: go to extracted directory and run binary
 cd C:\Users\msagardia\packages\kibana-8.14.3
 bin\kibana.bat
@@ -395,7 +398,7 @@ bin\kibana.bat
 # Elastic Search API: https://localhost:9200
 ```
 
-Troublesooting: If we get an error, make sure that `.../kibana-8.14.3/config/kibana.yaml` contains the line
+Troubleshooting: If we get an error, make sure that `.../kibana-8.14.3/config/kibana.yaml` contains the line
 
 ```
 elasticsearch.hosts: ["https://localhost:9200"]
@@ -415,7 +418,6 @@ export ELASTIC_PASSWORD="..."
 # Example: Basic query to get general cluster info
 cd C:\Users\msagardia\packages\elasticsearch-8.14.3
 curl.exe --cacert config\certs\http_ca.crt -u "$($Env:ELASTIC_USER):$($Env:ELASTIC_PASSWORD)" --insecure -X GET https://localhost:9200 --noproxy localhost
-
 ```
 
 ### Basic Architecture: Cluster, Nodes, Documents, Indices

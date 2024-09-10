@@ -652,7 +652,7 @@ POST /_reindex
 
 // --- Field Aliases
 
-// Reindexing to rename a field is a bed idea;
+// Reindexing to rename a field is a bad idea;
 // instead, we can use field aliases.
 // Here, we
 // add `comment` alias pointing to the `content` field,
@@ -669,7 +669,7 @@ PUT /reviews/_mapping
   }
 }
 
-// --- Muilti-field mappings
+// --- Multi-field mappings
 
 // The most common multi-field mapping
 // is the one where a field is both text and keyword.
@@ -1040,7 +1040,7 @@ POST /_analyze
 // able to process a text with HTML tags
 // and handle special characters
 // Note that we create it within an index: analyzer_test
-// In other words, it is created when creting the index.
+// In other words, it is created when creating the index.
 // It can be added later too, though, as shown below.
 PUT /analyzer_test
 {

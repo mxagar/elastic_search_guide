@@ -98,6 +98,9 @@ Table of contents:
     - [Relevance Scoring](#relevance-scoring)
     - [Searching Multiple Fields](#searching-multiple-fields)
     - [Phrase searches](#phrase-searches)
+    - [Bool Compound Queries](#bool-compound-queries)
+    - [Query and Filter Execution Contexts](#query-and-filter-execution-contexts)
+    - [Boosting Queries](#boosting-queries)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3477,11 +3480,279 @@ GET /products/_search
 {
   "query": {
     "match_phrase": {
-      "name": "mango juice"
+      "name": "mango juice" // it does not appear, but "juice mango" does
     }
   }
 }
 ```
+
+### Bool Compound Queries
+
+**Leaf queries** (all seen so far): they search for one or more values in one or more fields, but are independent queries:
+
+- `term`: no analyzer used
+- `match` (and related): analyzer used, full text
+- `range`, `prefix`, `regexp`, `wildcard`, etc.
+
+**Compound queries** are composed by leaf queries: several queries are performed simultaneously. To created them, we wrap the required leaf queries in a compound query, and similarly, we can nest compound queries within compound queries. In SQL this is done very easily; in Elasticsearch, we have several compound query types with their clauses.
+
+One **common compound query is [`bool`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html)**, which can be composes by several leaf clauses:
+
+- `must` and `must_not` clauses: required to match or not match.
+- `should` clauses: not required to match, but desired (relevance boosted); if a query is composed by only `should` clauses, one must match at least to obtain some results.
+- `filter` clauses: they are required to match, but, in contrast to `must` they don't affect relevance scores, i.e., they just filter the matches.
+
+Note that, under the hood, `match` queries are broken down to `bool` compound queries in which `must` and `should` clauses are used with `term` queries inside (i.e., text is analyzed to tokens, which are then used as terms in the search). Thus, `match` is an abstraction for easier UX.
+
+```json
+// Compound queries perform several leaf queries simultaneously.
+// The most common compound query is `bool`
+// which can accept several clauses:
+// - must: required to contain
+// - must_not: required not to contain
+// - should: not required to contain, but relevance is improved
+// - filter: required to contain, relevance unaffected
+
+// Example: must clause: the presence is required
+// SELECT * FROM products  WHERE tags IN ("Alcohol")
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: must_not clause: the non-presence is required
+// SELECT * FROM products WHERE tags IN ("Alcohol") AND tags NOT IN ("Wine")
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "Wine"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: should clause: not required to appear, but relevance is increased if it does
+// If we compose our compound query only with should clauses
+// at least one clause must match to get results.
+// If should clauses appear among must / filter clauses
+// should matches act as relevance boosters, unles we add
+// the parameter `minimum_should_match` to the should clause,
+// with which the should query becomes compulsory.
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "Wine"
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: Another bool compound query with more sub-queries
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "Wine"
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        },
+        {
+          "match": {
+            "name": "beer"
+          }
+        },
+        {
+          "match": {
+            "description": "beer"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: should clause with minimum_should_match,
+// which makes the query compulsory
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ], 
+      "should": [
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        },
+        {
+          "match": {
+            "name": "beer"
+          }
+        }
+      ],
+      "minimum_should_match": 1
+    }
+  }
+}
+
+// Example: filter clause: similar to must,
+// but they don't affect relevance scores.
+// Additionally, the results are cached,
+// so they increase speed/performance.
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example
+// SELECT * FROM products WHERE tags IN ("Beer") AND (name LIKE '%Beer%' OR description LIKE '%Beer%') AND in_stock <= 100
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "in_stock": {
+              "lte": 100
+            }
+          }
+        },
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        }
+      ],
+      "should": [
+        { "match": { "name": "Beer" } },
+        { "match": { "description": "Beer" } }
+      ],
+      "minimum_should_match": 1
+    }
+  }
+}
+// Alternative, equivalent
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "in_stock": {
+              "lte": 100
+            }
+          }
+        },
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        }
+      ],
+      "must": [
+        {
+          "multi_match": {
+            "query": "Beer",
+            "fields": ["name", "description"]
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### Query and Filter Execution Contexts
+
+We can distinguish two execution contexts:
+
+- `query` execution context.
+- `filter` execution contexts.
+
+Queries are executed in a `query` context unless specified otherwise; a `query` context is the typical scope `"query": {}` and **ranks documents according to their relevance**. So these queries answer the question *how well do the documents match?*.
+
+If we use `filter` instead of `query` or within it, we are in a `filter` context; in a `filter` context documents **are not ranked according to their relevance**, but only they are provided/filtered into the result if they match the search input. So these queries answer the question *does the document match?* Not computing the relevance is a performace improvement and the results can be cached. We need to decide whether we need relevance scoring or not.
+
+### Boosting Queries
+
+
 
 ## Joining Queries
 

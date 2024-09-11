@@ -1133,6 +1133,7 @@ Contents:
 - Match Query: Full-Text Query
 - Searching Multiple Fields
 - Phrase Searches
+- Bool Compound Queries
 
 ```json
 // --- Basic search: search all
@@ -1454,7 +1455,243 @@ GET /products/_search
 {
   "query": {
     "match_phrase": {
-      "name": "mango juice"
+      "name": "mango juice" // it does not appear, but "juice mango" does
+    }
+  }
+}
+
+
+// --- Bool Compound Queries
+
+// Compound queries perform several leaf queries simultaneously.
+// The most common compound query is `bool`
+// which can accept several clauses:
+// - must: required to contain
+// - must_not: required not to contain
+// - should: not required to contain, but relevance is improved
+// - filter: required to contain, relevance unaffected
+
+// Example: must clause: the presence is required
+// SELECT * FROM products  WHERE tags IN ("Alcohol")
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: must_not clause: the non-presence is required
+// SELECT * FROM products WHERE tags IN ("Alcohol") AND tags NOT IN ("Wine")
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "Wine"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: should clause: not required to appear, but relevance is increased if it does
+// If we compose our compound query only with should clauses
+// at least one clause must match to get results.
+// If should clauses appear among must / filter clauses
+// should matches act as relevance boosters, unles we add
+// the parameter `minimum_should_match` to the should clause,
+// with which the should query becomes compulsory.
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "Wine"
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: Another bool compound query with more sub-queries
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "Wine"
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        },
+        {
+          "match": {
+            "name": "beer"
+          }
+        },
+        {
+          "match": {
+            "description": "beer"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example: should clause with minimum_should_match,
+// which makes the query compulsory
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ], 
+      "should": [
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        },
+        {
+          "match": {
+            "name": "beer"
+          }
+        }
+      ],
+      "minimum_should_match": 1
+    }
+  }
+}
+
+// Example: filter clause: similar to must,
+// but they don't affect relevance scores.
+// Additionally, the results are cached,
+// so they increase speed/performance.
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "tags.keyword": "Alcohol"
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Example
+// SELECT * FROM products WHERE tags IN ("Beer") AND (name LIKE '%Beer%' OR description LIKE '%Beer%') AND in_stock <= 100
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "in_stock": {
+              "lte": 100
+            }
+          }
+        },
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        }
+      ],
+      "should": [
+        { "match": { "name": "Beer" } },
+        { "match": { "description": "Beer" } }
+      ],
+      "minimum_should_match": 1
+    }
+  }
+}
+// Alternative, equivalent
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "in_stock": {
+              "lte": 100
+            }
+          }
+        },
+        {
+          "term": {
+            "tags.keyword": "Beer"
+          }
+        }
+      ],
+      "must": [
+        {
+          "multi_match": {
+            "query": "Beer",
+            "fields": ["name", "description"]
+          }
+        }
+      ]
     }
   }
 }

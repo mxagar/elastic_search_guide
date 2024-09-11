@@ -97,6 +97,7 @@ Table of contents:
     - [Match Query: Full-Text Query](#match-query-full-text-query)
     - [Relevance Scoring](#relevance-scoring)
     - [Searching Multiple Fields](#searching-multiple-fields)
+    - [Phrase searches](#phrase-searches)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3394,7 +3395,93 @@ When we use term-level queries, the relevance score of all results is `_score = 
 
 ### Searching Multiple Fields
 
+We can use `multi_match` to search in more than one field. This query enables also boosting the relevance of fields. 
 
+Internally, `multi_match` is broken down to several `match` queries, each with a field. Then, the relevance of each matching document in each field is computed, and usually, if we have several matching fields in a document the highest is taken for the document. In case of a tie in documents, we can add a `tie_breaker` factor: in that case, the score of the field with the maximum relevance is taken and the rest of matching field scores are summed after multiplying the `tie_breaker` factor to them.
+
+```json
+// We can use `multi_match` 
+// to search in more than one field.
+// However, by default the score of the
+// highest matching field is used for the document;
+// exception: using a tie_breaker (see below)
+GET /products/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "vegetable",
+      "fields": ["name", "tags"]
+    }
+  }
+}
+
+// We can modify the relevance scores
+// by boosting the relevance score per field
+// field_a^2: relevance scores of matches in field_a
+// and doubled (x2). Again, by default the 
+// highest matching field is used for the document;
+// exception: using a tie_breaker (see below)
+GET /products/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "vegetable",
+      "fields": ["name^2", "tags"]
+    }
+  }
+}
+
+// Here a multi_match is performed in 2 fields
+// and a tie_breaker is added; as a consequence,
+// the score of the document is a sum of
+// - the score of the maximum matching field
+// - and the scores of the other matching fields multiplied by tie_breaker
+GET /products/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "vegetable broth",
+      "fields": ["name", "description"],
+      "tie_breaker": 0.3
+    }
+  }
+}
+```
+
+![Multiple Match: Tie Breaker](./assets/multiple_match_tie_breaker.png)
+
+### Phrase searches
+
+In the `match` query we can put a free text string and it will be analyzed; then, the tokens are used to search in the inverted index for the specified fields. Usually
+
+- the order of the words doesn't matter
+- and not all the words/tokens need to appear for the document to be a match.
+
+If we use `match_phrase` instead:
+
+- all tokens need to appear
+- and the order must be the same, without terms in-between.
+
+Recall that during the analysis (tokenization), the position of the terms in the document is recorded.
+
+It makes sense to use this with movie, book, course titles, or the like, if we are sure anbout them.
+
+```json
+// The `match` query searches for 
+// any of the tokens in any order in the fields.
+// Meanwhile, with `match_phrase` we 
+// require for all tokens to appear
+// in the correct order and without other
+// tokens in between.
+GET /products/_search
+{
+  "query": {
+    "match_phrase": {
+      "name": "mango juice"
+    }
+  }
+}
+```
 
 ## Joining Queries
 

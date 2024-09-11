@@ -1131,6 +1131,8 @@ Contents:
 - Searching with Prefixes, Wildcards, Regex
 - Querying by Field Existence
 - Match Query: Full-Text Query
+- Searching Multiple Fields
+- Phrase Searches
 
 ```json
 // --- Basic search: search all
@@ -1385,6 +1387,74 @@ GET /products/_search
         // require all tokens to appear in results
         "operator": "and"
       }
+    }
+  }
+}
+
+
+// --- Searching Multiple Fields
+
+// We can use `multi_match` 
+// to search in more than one field.
+// However, by default the score of the
+// highest matching field is used for the document;
+// exception: using a tie_breaker (see below)
+GET /products/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "vegetable",
+      "fields": ["name", "tags"]
+    }
+  }
+}
+
+// We can modify the relevance scores
+// by boosting the relevance score per field
+// field_a^2: relevance scores of matches in field_a
+// and doubled (x2). Again, by default the 
+// highest matching field is used for the document;
+// exception: using a tie_breaker (see below)
+GET /products/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "vegetable",
+      "fields": ["name^2", "tags"]
+    }
+  }
+}
+
+// Here a multi_match is performed in 2 fields
+// and a tie_breaker is added; as a consequence,
+// the score of the document is a sum of
+// - the score of the maximum matching field
+// - and the scores of the other matching fields multiplied by tie_breaker
+GET /products/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "vegetable broth",
+      "fields": ["name", "description"],
+      "tie_breaker": 0.3
+    }
+  }
+}
+
+
+// --- Phrase Searches
+
+// The `match` query searches for 
+// any of the tokens in any order in the fields.
+// Meanwhile, with `match_phrase` we 
+// require for all tokens to appear
+// in the correct order and without other
+// tokens in between.
+GET /products/_search
+{
+  "query": {
+    "match_phrase": {
+      "name": "mango juice"
     }
   }
 }

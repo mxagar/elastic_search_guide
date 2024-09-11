@@ -101,6 +101,7 @@ Table of contents:
     - [Bool Compound Queries](#bool-compound-queries)
     - [Query and Filter Execution Contexts](#query-and-filter-execution-contexts)
     - [Boosting Queries](#boosting-queries)
+    - [Disjunction Max](#disjunction-max)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3857,6 +3858,49 @@ GET /recipes/_search
         }
       },
       "negative_boost": 0.5
+    }
+  }
+}
+```
+
+### Disjunction Max
+
+Disjoint max is a compound query with these properties:
+
+- We can add several queries within it.
+- For a document to be a match, it's enough if one query is a match.
+- If several queries give a match, the one with the highest relevance is used to compute the document relevance.
+
+Under the hood, the `multi_match` query is broken down to a `dis_max` query.
+
+```json
+// Disjoint max is a compound query:
+// - We can add several queries within it
+// - For a document to be a match, it's enough if one query is a match
+// - If several queries give a match, the one with the highest relevance is used to compute the document relevance
+// The `multi_match` query is broken down to a `dis_max` query internally.
+GET /products/_search
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match": { "name": "vegetable" } },
+        { "match": { "tags": "vegetable" } }
+      ]
+    }
+  }
+}
+// Here, we add tie_breaker != 0.0, with which
+// we take the lesser relevant scores weighted by it
+GET /products/_search
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match": { "name": "vegetable" } },
+        { "match": { "tags": "vegetable" } }
+      ],
+      "tie_breaker": 0.3
     }
   }
 }

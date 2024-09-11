@@ -1135,6 +1135,7 @@ Contents:
 - Phrase Searches
 - Bool Compound Queries
 - Boosting Queries
+- Disjoint Max
 
 ```json
 // --- Basic search: search all
@@ -1805,4 +1806,36 @@ GET /recipes/_search
   }
 }
 
+// --- Disjoint Max
+
+// Disjoint max is a compound query:
+// - We can add several queries within it
+// - For a document to be a match, it's enough if one query is a match
+// - If several queries give a match, the one with the highest relevance is used to compute the document relevance
+// The `multi_match` query is broken down to a `dis_max` query internally.
+GET /products/_search
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match": { "name": "vegetable" } },
+        { "match": { "tags": "vegetable" } }
+      ]
+    }
+  }
+}
+// Here, we add tie_breaker != 0.0, with which
+// we take the lesser relevant scores weighted by it
+GET /products/_search
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match": { "name": "vegetable" } },
+        { "match": { "tags": "vegetable" } }
+      ],
+      "tie_breaker": 0.3
+    }
+  }
+}
 ```

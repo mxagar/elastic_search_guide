@@ -3752,7 +3752,115 @@ If we use `filter` instead of `query` or within it, we are in a `filter` context
 
 ### Boosting Queries
 
+The `^` symbol in `multi_match` allows to boost the relevance of one field wrt. another. However, we can also use the `boosting` query, which allows to weight different sub-query matches differently.
 
+```json
+// The `boosting` query
+// allows to weight different sub-query matches differently.
+// Example: Get products which are a juice
+GET /products/_search
+{
+  "size": 20, // increase page size from 10 (default) to 20
+  "query": {
+    "match": {
+      "name": "juice"
+    }
+  }
+}
+// Next version of the query but with boosting:
+// - we prioritize juices
+// - we penalize apple products
+GET /products/_search
+{
+  "size": 20,
+  "query": {
+    "boosting": {
+      "positive": {
+        "match": {
+          "name": "juice"
+        }
+      },
+      "negative": {
+        "match": {
+          "name": "apple"
+        }
+      },
+      "negative_boost": 0.5 // [0.0,1.0]
+    }
+  }
+}
+
+// Example: Pasta products, preferably without bacon
+GET /recipes/_search
+{
+  "query": {
+    "boosting": {
+      "positive": {
+        "term": {
+          "ingredients.name.keyword": "Pasta"
+        }
+      },
+      "negative": {
+        "term": {
+          "ingredients.name.keyword": "Bacon"
+        }
+      },
+      "negative_boost": 0.5
+    }
+  }
+}
+
+// Example: anything without bacon
+// We always need to have a positive boosting query
+// so we add match_all by default
+GET /recipes/_search
+{
+  "query": {
+    "boosting": {
+      "positive": {
+        "match_all": {}
+      },
+      "negative": {
+        "term": {
+          "ingredients.name.keyword": "Bacon"
+        }
+      },
+      "negative_boost": 0.5
+    }
+  }
+}
+
+// Example: Show me all products, but
+// - prioritize pasta products
+// - penalize bacon products
+GET /recipes/_search
+{
+  "query": {
+    "boosting": {
+      "positive": {
+        "bool": {
+          "must": [
+            { "match_all": {} }
+          ],
+          "should": [
+            {
+              "term": {
+                "ingredients.name.keyword": "Pasta"
+              }
+            }
+          ]
+        }
+      },
+      "negative": {
+        "term": {
+          "ingredients.name.keyword": "Bacon"
+        }
+      },
+      "negative_boost": 0.5
+    }
+  }
+}
+```
 
 ## Joining Queries
 

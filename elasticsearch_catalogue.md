@@ -12,6 +12,7 @@ Table of contents:
   - [Analyzers](#analyzers)
   - [Mappings](#mappings)
   - [Search](#search)
+  - [Joining Queries](#joining-queries)
 
 
 ## Basic
@@ -2037,3 +2038,6 @@ GET /recipes/_search
   }
 }
 ```
+
+## Joining Queries
+

@@ -102,6 +102,9 @@ Table of contents:
     - [Query and Filter Execution Contexts](#query-and-filter-execution-contexts)
     - [Boosting Queries](#boosting-queries)
     - [Disjunction Max](#disjunction-max)
+    - [Querying Nested Objects](#querying-nested-objects)
+    - [Nested Inner Hits](#nested-inner-hits)
+    - [Nested Fields Limitations](#nested-fields-limitations)
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
@@ -3905,6 +3908,275 @@ GET /products/_search
   }
 }
 ```
+
+### Querying Nested Objects
+
+In order to run the examples in this section, a new index must be bulk-created from the JSON [`recipes-bulk.json`](./notebooks/recipes-bulk.json). The notebook [`elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb) has the REST call which performes that (Section: Batch/Bulk Processing).
+
+The documents are recipes; one field is `ingredients`, which is an array of objects; each object has these fields:
+
+```json
+[
+  {
+    "name": "string",
+    "amount": 123,
+    "unit": "string (predefined categories)"
+  },
+]
+```
+
+Array fields are internally handled together, i.e., they are not considered individual instances. For instance, this array:
+
+```json
+[
+  { ... "amount": 100 ...},
+  { ... "amount": 200 ...}
+  { ... "amount": 300 ...},
+]
+```
+
+is treated internally as if it were
+
+```json
+...
+  "ingredients.amount": [100, 200, 300]
+...
+```
+
+Therefore, running a query like `"range": { "ingredients.amount": { "gte": 100 } } ` on a field that belongs to an array will not really return the instances within the array which satisfy it, but the *complete array*, if the array has at least one instance which satisfies the condition, no matter which instance it is. Thus, we are not filtering by nested object values really (e.g., recipes which contain at least 100g Parmesan).
+
+Therefore, when we have nested fields with arrays, we need to carefully define the mapping. Concretely, in our case, we need to re-define our `ingredients` field as `nested` type (recall re-mapping requires re-indexing):
+
+```json
+"ingredients": {
+  "type": "nested",
+  "properties": {
+    "name": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword"
+        }
+      }
+    }
+```
+
+In the following, the example queries are shown to fix the issue and deal with nested objects/fields:
+
+```json
+// Array fields are not nested fields,
+// so we cannot filter documents considering each
+// element of the array independenty as an object.
+// In this example, ingredients is an array, so all values within it
+// are handled together; thus, if a filtering query
+// is run on a field of ingredients,
+// we won't get the instances within the array which satisfy it, 
+// but the *complete array*, 
+// if the array has at least one instance which satisfies the condition.
+// WARNING: This query does not work with nested objects/types
+// but ingredients is not nested yet...
+GET /recipes/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "ingredients.name": "parmesan"
+          }
+        },
+        {
+          "range": {
+            "ingredients.amount": {
+              "gte": 100
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+// The real question we want to ask is:
+// Which recipies contain at least 100 units of Parmesan cheese?
+// To achieve that, we need to
+// - map the ingredients field as nested
+// - reindex everything correctly again
+// Therefore, we:
+// 1. delete the index
+// 2. define the mapping
+// 3. bulk-process the JSON again
+
+// 1. Delete recipes index
+DELETE /recipes
+// 2. Define new mapping with ingredients as type nested
+// Each nested object will be stored internally 
+// as a separete Lucene document.
+// Additionally, we have a root document that points
+// to the nested documents.
+// And usually, we are interested in the root document
+// but we apply queries to the nested ones
+// if we want to filter using nested fields.
+// IMPORTANT NOTE: while nested fields allow for
+// filtering according to nested objects,
+// they have the important limitation that they can contain
+// only 10k instances. Thus, it is often better
+// to create separate indices instead of nested fields,
+// so that we can easily scale.
+PUT /recipes
+{
+  "mappings": {
+    "properties": {
+      "title": { "type": "text" },
+      "description": { "type": "text" },
+      "preparation_time_minutes": { "type": "integer" },
+      "steps": { "type": "text" },
+      "created": { "type": "date" },
+      "ratings": { "type": "float" },
+      "servings": {
+        "properties": {
+          "min": { "type": "integer" },
+          "max": { "type": "integer" }
+        }
+      },
+      "ingredients": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "amount": { "type": "integer" },
+          "unit": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}
+// 3. Bulk-process JSON, done in the notebook
+// NOTE: The bulk command is the same, only
+// this time we don't let ELasticsearch infer the mapping
+// but we use a manually & correctly defined one!
+
+// Now, we can ask the correct question and the the correct answer:
+// Which recipies contain at least 100 units of Parmesan cheese?
+// The query for nested fields is `nest` and has the following syntax.
+// Note that even we apply the query to the nested
+// documents, only root documents are returned.
+// We can modify how the scoring is transferred from child to root documents
+// with the parameter `score_mode`,
+// which can be: `avg` (default: average score of matching children), min, max, sum, none
+GET /recipes/_search
+{
+  "query": {
+    "nested": {
+      "path": "ingredients", // we can use the dot notation if required
+      "query": { // here, we can use the typical query as for not nested fields
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "ingredients.name": "parmesan"
+              }
+            },
+            {
+              "range": {
+                "ingredients.amount": {
+                  "gte": 100
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### Nested Inner Hits
+
+In general, when we query conditioning nested field/object values, the parent/root documents whose nested objects satisfy the conditions are returned.
+
+If we want to know more about which nested objects/fields matched (not only the parent object), we can add the parameter `inner_hits` to obtain more detailed information of the children documents that matched.
+
+```json
+// In general, when we query 
+// conditioning nested field/object values,
+// the parent/root documents whose nested objects
+// satisfy the conditions are returned.
+// If we want to know more about 
+// which nested objects/fields matched
+// (not only the parent object),
+// we can add the parameter `inner_hits`.
+// Nested/children docs that match are displayed
+// with their offset id according to relevance.
+GET /recipes/_search
+{
+  "query": {
+    "nested": {
+      "path": "ingredients",
+      "inner_hits": {}, // children/nested object that match will be shown in hits
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "ingredients.name": "parmesan"
+              }
+            },
+            {
+              "range": {
+                "ingredients.amount": {
+                  "gte": 100
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+
+// We can further specify parameters to `inner_hits`:
+// - name: the JSON field name for inner hits in the response
+// - size: how many inner hits we want to get (default: 3)
+GET /recipes/_search
+{
+  "query": {
+    "nested": {
+      "path": "ingredients",
+      "inner_hits": {
+        "name": "my_hits",
+        "size": 10
+      }, 
+      "query": {
+        "bool": {
+          "must": [
+            { "match": { "ingredients.name": "parmesan" } },
+            { "range": { "ingredients.amount": { "gte": 100 } } }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### Nested Fields Limitations
+
+Indexing and querying nested fields can be expensive, because we create additional documents and indices under the hood.
+
+Limitations:
+
+- We need to use the special `nested` query.
+- A maximum of 50 nested fields/objects are possible by default.
+- A maximum of 10k nested documents are allowed; this is an important limitation for scalability; often times it's better to have separate indices instead of nested fields.
 
 ## Joining Queries
 

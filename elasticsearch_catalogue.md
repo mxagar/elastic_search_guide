@@ -2041,3 +2041,152 @@ GET /recipes/_search
 
 ## Joining Queries
 
+Contents
+
+- Mapping Document Relationships
+- Querying Related/Joined Documents
+
+```json
+// --- Mapping Document Relationships
+
+// The department index is composed by
+// - a department name
+// - and a nested field of employees
+PUT /department
+{
+  "mappings": {  
+    "properties": {
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "employees": {
+        "type": "nested"
+      }
+    }
+  }
+}
+
+// To define document relationships, 
+// we need to modify/add them to the mapping
+// in the `join_field`
+// There, we define parent-child relationships
+// with key-value pairs.
+// When adding documents, we can use that relationship
+PUT /department/_mapping
+{
+  "properties": {
+    "join_field": { 
+      "type": "join",
+      "relations": {
+        // key-value pairs (parent-child); 
+        // arbitraty strings
+        // that don't need to match the index names!
+        // We will refer to these strings (key-values)
+        // when adding/indexing documents.
+        // If we have several children, the value is an array
+        "department": "employee"
+      }
+    }
+  }
+}
+
+// New department document with id 1
+// We assign the parent/key "department" to it
+PUT /department/_doc/1
+{
+  "name": "Development",
+  "join_field": "department"
+}
+// New department document with id 2
+// We assign the parent/key "department" to it
+PUT /department/_doc/2
+{
+  "name": "Marketing",
+  "join_field": "department"
+}
+// New document with id 3
+// This time it is an employee!
+// We need to:
+// - specify the id of the parent document (department): 1
+// - add the same id in the routing, so that the employee and the department are in the same shard
+// - assign the value/child entry to the join_field
+// Note that dynamic mapping is applied,
+// - no employees field is specified
+// - age and gender are added
+// Note: the id of the parent document is used to get the shard
+PUT /department/_doc/3?routing=1
+{
+  "name": "John Doe",
+  "age": 28,
+  "gender": "M",
+  "join_field": {
+    "name": "employee",
+    "parent": 1 // department doc id, same as in routing
+  }
+}
+
+// --- Querying Related/Joined Documents
+
+// Querying the children by parent ID
+GET /department/_search
+{
+  "query": {
+    "parent_id": {
+      "type": "employee", // the type of relation for parent we'd like to get
+      "id": 1 // the id of the parent document
+    }
+  }
+}
+
+// Querying the children by some query related to the parent
+// It is possible to modify the relevance sorting with `score`
+GET /department/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "department", // parent/key relation name
+      "query": { // any query would work, e.g., a bool query
+        "term": {
+          "name.keyword": "Development"
+        }
+      }
+    }
+  }
+}
+
+// Qurying the parent(s) by some query related to the children
+// It is possible to modify the relevance sorting with `score_mode`
+GET /department/_search
+{
+  "query": {
+    "has_child": {
+      "type": "employee", // relation type of the child: employee
+      "query": { // any query related to the children fields
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "age": {
+                  "gte": 50
+                }
+              }
+            }
+          ],
+          "should": [
+            {
+              "term": {
+                "gender.keyword": "M"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```

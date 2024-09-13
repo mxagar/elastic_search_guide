@@ -107,7 +107,8 @@ Table of contents:
     - [Nested Fields Limitations](#nested-fields-limitations)
   - [Joining Queries](#joining-queries)
     - [Mapping Document Relationships](#mapping-document-relationships)
-    - [Querying by Parent ID](#querying-by-parent-id)
+    - [Querying Related/Joined Documents](#querying-relatedjoined-documents)
+    - [Multi-level Relations](#multi-level-relations)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
   - [Improving Search Results](#improving-search-results)
@@ -4272,6 +4273,7 @@ PUT /department/_doc/2
 // Note that dynamic mapping is applied,
 // - no employees field is specified
 // - age and gender are added
+// Note: the id of the parent document is used to get the shard
 PUT /department/_doc/3?routing=1
 {
   "name": "John Doe",
@@ -4284,9 +4286,81 @@ PUT /department/_doc/3?routing=1
 }
 ```
 
-### Querying by Parent ID
+### Querying Related/Joined Documents
 
+We can retrieve
 
+- child documents related to a parent: [`has_parent`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-has-parent-query.html#_sorting_2)
+- or parent document given a child: [`has_child`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-has-child-query.html#_sorting)
+
+It is possible to influce the scores of the matched documents with the parameters `score` and `score_mode`.
+
+```json
+// Querying the children by parent ID
+GET /department/_search
+{
+  "query": {
+    "parent_id": {
+      "type": "employee", // the type of relation for parent we'd like to get
+      "id": 1 // the id of the parent document
+    }
+  }
+}
+
+// Querying the children by some query related to the parent
+// It is possible to modify the relevance sorting with `score`
+GET /department/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "department", // parent/key relation name
+      "query": { // any query would work, e.g., a bool query
+        "term": {
+          "name.keyword": "Development"
+        }
+      }
+    }
+  }
+}
+
+// Qurying the parent(s) by some query related to the children
+// It is possible to modify the relevance sorting with `score_mode`
+GET /department/_search
+{
+  "query": {
+    "has_child": {
+      "type": "employee", // relation type of the child: employee
+      "query": { // any query related to the children fields
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "age": {
+                  "gte": 50
+                }
+              }
+            }
+          ],
+          "should": [
+            {
+              "term": {
+                "gender.keyword": "M"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### Multi-level Relations
+
+So far we have departments and employees; we are going to extend the parent-child relationship by adding
+
+- A **company** which contains departments
+- and which also has **customers** (in the same level of hierarchy as departments).
 
 ## Controlling Query Results
 

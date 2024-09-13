@@ -106,6 +106,8 @@ Table of contents:
     - [Nested Inner Hits](#nested-inner-hits)
     - [Nested Fields Limitations](#nested-fields-limitations)
   - [Joining Queries](#joining-queries)
+    - [Mapping Document Relationships](#mapping-document-relationships)
+    - [Querying by Parent ID](#querying-by-parent-id)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
   - [Improving Search Results](#improving-search-results)
@@ -4180,9 +4182,111 @@ Limitations:
 
 ## Joining Queries
 
-TBD.
+In relational databases (SQL), **database normalization** is performed; database normalization is the process of organizing data into multiple related tables to reduce redundancy and improve data integrity. It involves applying rules called normal forms (first normal form or 1NF, 2NF, 3NF, etc.) to structure the data logically. For instance, all categorical fields in a table A can be split into a separate tables that contain the categories with their primary keys; then, table A makes reference to those keys in its rows. 
 
-:construction:
+In contrast, Elasticsearch is a NoSQL, document-oriented data store that favors denormalization. Instead of splitting data into separate tables, Elasticsearch encourages storing related data together within documents, even if this means duplicating some data. This approach optimizes search and retrieval performance, allowing for faster queries at the expense of increased storage and potential data redundancy. Therefore, Elasticsearch is not recommended as primary storage solution, but only as a search solution.
+
+Joins are usually possible in relational DBs (SQL), not always in NoSQL DBs. **Elasticsearch allows join queries, but are extremely expensive.**
+
+In this section, a new index must be created running the commands in the JSON [`departments.json`](./notebooks/departments.json). No notebook is required (it's not bulk-processed), but we need to run the commands in the Kibana UI.
+
+### Mapping Document Relationships
+
+Recall we are using a `department` index defined as follows:
+
+```json
+// The department index is composed by
+// - a department name
+// - and a nested field of employees
+PUT /department
+{
+  "mappings": {  
+    "properties": {
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "employees": {
+        "type": "nested"
+      }
+    }
+  }
+}
+```
+
+To define document relationships, we need to modify/add them to the mapping in the `join_field` field as parent-children entries defined as key-value paris. Then, when we add the documents, we manually specify the relationships.
+
+```json
+// To define document relationships, 
+// we need to modify/add them to the mapping
+// in the `join_field`
+// There, we define parent-child relationships
+// with key-value pairs.
+// When adding documents, we can use that relationship
+PUT /department/_mapping
+{
+  "properties": {
+    "join_field": { 
+      "type": "join",
+      "relations": {
+        // key-value pairs (parent-child); 
+        // arbitraty strings
+        // that don't need to match the index names!
+        // We will refer to these strings (key-values)
+        // when adding/indexing documents.
+        // If we have several children, the value is an array
+        "department": "employee"
+      }
+    }
+  }
+}
+```
+
+In the following, we add departments assigning them to the parent/key field defined in the mapping `department` and an employee object assigned to the nested child/value field `employee`:
+
+```json
+// New department document with id 1
+// We assign the parent/key "department" to it
+PUT /department/_doc/1
+{
+  "name": "Development",
+  "join_field": "department"
+}
+// New department document with id 2
+// We assign the parent/key "department" to it
+PUT /department/_doc/2
+{
+  "name": "Marketing",
+  "join_field": "department"
+}
+// New document with id 3
+// This time it is an employee!
+// We need to:
+// - specify the id of the parent document (department): 1
+// - add the same id in the routing, so that the employee and the department are in the same shard
+// - assign the value/child entry to the join_field
+// Note that dynamic mapping is applied,
+// - no employees field is specified
+// - age and gender are added
+PUT /department/_doc/3?routing=1
+{
+  "name": "John Doe",
+  "age": 28,
+  "gender": "M",
+  "join_field": {
+    "name": "employee",
+    "parent": 1 // department doc id, same as in routing
+  }
+}
+```
+
+### Querying by Parent ID
+
+
 
 ## Controlling Query Results
 

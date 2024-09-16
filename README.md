@@ -115,7 +115,9 @@ Table of contents:
   - [Controlling Query Results](#controlling-query-results)
     - [Specifying the Result Format](#specifying-the-result-format)
     - [Source Filtering](#source-filtering)
-    - [Specifying the Result Size](#specifying-the-result-size)
+    - [Specifying the Result Size and Offset](#specifying-the-result-size-and-offset)
+    - [Pagination](#pagination)
+    - [Sorting Results](#sorting-results)
   - [Aggregations](#aggregations)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
@@ -4695,7 +4697,7 @@ GET /recipes/_search
 }
 ```
 
-### Specifying the Result Size
+### Specifying the Result Size and Offset
 
 We can specify how many items we'd like to get in return.
 
@@ -4721,6 +4723,110 @@ GET /recipes/_search
       "title": "pasta"
     }
   }
+}
+
+// Specifying an offset with the `from` parameter
+GET /recipes/_search
+{
+  "_source": false,
+  "size": 2,
+  "from": 2,
+  "query": {
+    "match": {
+      "title": "pasta"
+    }
+  }
+}
+```
+
+### Pagination
+
+If we would like to paginate the results, we need to use the control of the result size and offset as shown in the previous section.
+
+    total_pages = ceil(total_hits / page_size)
+    page_size: size parameter
+    from = (page_size * (page_number - 1))
+
+Pagination needs to be implemented.
+
+### Sorting Results
+
+The default behavior is sorting by score, but we can alter that by specifying fields by which we would like to sort.
+
+```json
+// The default behavior is sorting by score, 
+// but we can alter that by specifying fields
+// by which we would like to sort.
+// Sorting by ascending order (implicitly) 
+// of the field preparation_time_minutes.
+// The result contains a sort value
+// related to the sorted field
+// so we can exclude the _source object
+// since we're really interested only on the
+// returned, sorted values of preparation_time_minutes
+GET /recipes/_search
+{
+  "_source": false,
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    "preparation_time_minutes"
+  ]
+}
+
+// Sorting by descending order
+// of the field created.
+// Since created is in milliseconds,
+// we include the created field from _source
+// which is a date in a human readable format,
+// i.e., we do it for easier interpretation.
+GET /recipes/_search
+{
+  "_source": "created",
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    { "created": "desc" }
+  ]
+}
+
+// Sorting by multiple fields:
+// sorting is done in order of specification.
+// We add the sorted/searched fields to
+// _source just for easier interpretation.
+GET /recipes/_search
+{
+  "_source": [ "preparation_time_minutes", "created" ],
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    { "preparation_time_minutes": "asc" },
+    { "created": "desc" }
+  ]
+}
+
+// Multi-value fields (e.g., arrays) can also be used
+// for sorting; with them, we can specify
+// an aggregation mode for the field.
+// Example: ratings is an array with several scores.
+// Sorting by the average rating (descending)
+GET /recipes/_search
+{
+  "_source": "ratings",
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    {
+      "ratings": {
+        "order": "desc",
+        "mode": "avg"
+      }
+    }
+  ]
 }
 ```
 

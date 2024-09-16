@@ -2418,7 +2418,8 @@ Contents:
 
 - Specifying the Result Format
 - Source Filtering
-- Specifying the Result Size
+- Specifying the Result Size and Offset
+- Sorting Results
 
 ```json
 // -- Specifying the Result Format
@@ -2473,7 +2474,7 @@ GET /recipes/_search
   }
 }
 
-// --- Specifying the Result Size
+// --- Specifying the Result Size and Offset
 
 // Using a query parameter
 GET /recipes/_search?size=2
@@ -2497,4 +2498,95 @@ GET /recipes/_search
     }
   }
 }
+
+// Specifying an offset with the `from` parameter
+GET /recipes/_search
+{
+  "_source": false,
+  "size": 2,
+  "from": 2,
+  "query": {
+    "match": {
+      "title": "pasta"
+    }
+  }
+}
+
+// --- Sorting Results
+
+// The default behavior is sorting by score, 
+// but we can alter that by specifying fields
+// by which we would like to sort.
+// Sorting by ascending order (implicitly) 
+// of the field preparation_time_minutes.
+// The result contains a sort value
+// related to the sorted field
+// so we can exclude the _source object
+// since we're really interested only on the
+// returned, sorted values of preparation_time_minutes
+GET /recipes/_search
+{
+  "_source": false,
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    "preparation_time_minutes"
+  ]
+}
+
+// Sorting by descending order
+// of the field created.
+// Since created is in milliseconds,
+// we include the created field from _source
+// which is a date in a human readable format,
+// i.e., we do it for easier interpretation.
+GET /recipes/_search
+{
+  "_source": "created",
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    { "created": "desc" }
+  ]
+}
+
+// Sorting by multiple fields:
+// sorting is done in order of specification.
+// We add the sorted/searched fields to
+// _source just for easier interpretation.
+GET /recipes/_search
+{
+  "_source": [ "preparation_time_minutes", "created" ],
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    { "preparation_time_minutes": "asc" },
+    { "created": "desc" }
+  ]
+}
+
+// Multi-value fields (e.g., arrays) can also be used
+// for sorting; with them, we can specify
+// an aggregation mode for the field.
+// Example: ratings is an array with several scores.
+// Sorting by the average rating (descending)
+GET /recipes/_search
+{
+  "_source": "ratings",
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    {
+      "ratings": {
+        "order": "desc",
+        "mode": "avg"
+      }
+    }
+  ]
+}
+
 ```

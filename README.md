@@ -109,6 +109,8 @@ Table of contents:
     - [Mapping Document Relationships](#mapping-document-relationships)
     - [Querying Related/Joined Documents](#querying-relatedjoined-documents)
     - [Multi-level Relations](#multi-level-relations)
+    - [Parent/Child Inner Hits](#parentchild-inner-hits)
+    - [Terms Lookup Mechanism](#terms-lookup-mechanism)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
   - [Improving Search Results](#improving-search-results)
@@ -4187,7 +4189,22 @@ In relational databases (SQL), **database normalization** is performed; database
 
 In contrast, Elasticsearch is a NoSQL, document-oriented data store that favors denormalization. Instead of splitting data into separate tables, Elasticsearch encourages storing related data together within documents, even if this means duplicating some data. This approach optimizes search and retrieval performance, allowing for faster queries at the expense of increased storage and potential data redundancy. Therefore, Elasticsearch is not recommended as primary storage solution, but only as a search solution.
 
-Joins are usually possible in relational DBs (SQL), not always in NoSQL DBs. **Elasticsearch allows join queries, but are extremely expensive.**
+Joins are usually possible in relational DBs (SQL), not always in NoSQL DBs. **Elasticsearch allows join queries via the definition of the field `join_field`, but these queries are extremely expensive.**
+
+**Limitations of join queries**:
+
+- Joins must be stored in the same index.
+- Parent and child documents must be indexed in the same shard.
+- There can be only one `join_field` in an index, even tough we can add several children.
+- A document can have only one parent, but can have several children.
+
+**Performance issues of join queries**:
+
+- Join queries are expensive and should be avoided.
+- When does it make sense to have join fields and queries? When there is 1:N relationship between two document types and one type has significantly more documents than the other. Example: recipes (parent) and ingredients (child).
+- What to do when we don't have such a use-case?
+  - Consider nested types as an alternative.
+  - Do not use relationships at all! Elasticsearch is for quick search, it's not a relational DB! It is preferable to de-normalize the data to allow efficient search in detriment of optimum storage.
 
 In this section, a new index must be created running the commands in the JSON [`departments.json`](./notebooks/departments.json). No notebook is required (it's not bulk-processed), but we need to run the commands in the Kibana UI.
 
@@ -4268,7 +4285,7 @@ PUT /department/_doc/2
 // This time it is an employee!
 // We need to:
 // - specify the id of the parent document (department): 1
-// - add the same id in the routing, so that the employee and the department are in the same shard
+// - define the routing id so that the employee and the department are in the same shard; the routing id refers to the highest parent id in the hierarchy, in this case, add the highest parent is actually the next parent, i.e., the parent document id
 // - assign the value/child entry to the join_field
 // Note that dynamic mapping is applied,
 // - no employees field is specified
@@ -4357,10 +4374,249 @@ GET /department/_search
 
 ### Multi-level Relations
 
-So far we have departments and employees; we are going to extend the parent-child relationship by adding
+So far we have departments and employees; however, we can expand the hierarchy to contain many more parent-children relationships. Once the hierarchy is defined, to add new documents, we specify the 
 
-- A **company** which contains departments
-- and which also has **customers** (in the same level of hierarchy as departments).
+- `parent` document id in the `join_field`
+- and the furthest parent document id in the `rounting`.
+
+In the following, we are going to extend the parent-child relationship by adding
+
+- A **company** which contains departments (which have employees)
+- and which also has **suppliers** (in the same level of hierarchy as departments).
+
+```json
+// We can extend the relations by adding
+// more parent-children pairs
+// Now, we have:
+// company -> 
+//    department ->
+//        employee
+//    supplier
+PUT /company
+{
+  "mappings": {
+    "properties": {
+      "join_field": { 
+        "type": "join",
+        "relations": {
+          // We add new relations as a key-value pairs (parent-children)
+          "company": ["department", "supplier"],
+          "department": "employee"
+        }
+      }
+    }
+  }
+}
+
+// Adding a company (ID: 1)
+PUT /company/_doc/1
+{
+  "name": "My Company Inc.",
+  "join_field": "company"
+}
+// Adding a department (ID: 2)
+PUT /company/_doc/2?routing=1
+{
+  "name": "Development",
+  "join_field": {
+    "name": "department",
+    "parent": 1
+  }
+}
+// Adding an employee (ID: 3)
+// NOTE: the rounting and parent values are different now!
+// - routing refers to the furtherst parent (company)
+// - parent refers to the next parent (department)
+PUT /company/_doc/3?routing=1
+{
+  "name": "Bo Andersen",
+  "join_field": {
+    "name": "employee",
+    "parent": 2
+  }
+}
+
+// Search: works similarly as before
+// Queries are nested one inside the other.
+// In this example, a company is returned
+// which has a department which has an employee
+// with the specified name
+GET /company/_search
+{
+  "query": {
+    "has_child": {
+      "type": "department",
+      "query": {
+        "has_child": {
+          "type": "employee",
+          "query": {
+            "term": {
+              "name.keyword": "John Doe"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Parent/Child Inner Hits
+
+We can work/get inner hits as before.
+
+```json
+// Including inner hits for the `has_child` query.
+// Departments which have employees
+// which match the specified requirements;
+// inner hit employees are returned, too.
+GET /department/_search
+{
+  "query": {
+    "has_child": {
+      "type": "employee",
+      "inner_hits": {},
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "age": {
+                  "gte": 50
+                }
+              }
+            }
+          ],
+          "should": [
+            {
+              "term": {
+                "gender.keyword": "M"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+
+// Including inner hits for the `has_parent` query;
+// inner hit departments are returned, too
+// (in this case, it's trivial, i.e., only one Department)
+GET /department/_search
+{
+  "query": {
+    "has_parent": {
+      "inner_hits": {},
+      "parent_type": "department",
+      "query": {
+        "term": {
+          "name.keyword": "Development"
+        }
+      }
+    }
+  }
+}
+```
+
+### Terms Lookup Mechanism
+
+The idea behind is to use the values from another document to perform the search. We could do it in other ways (e.g., with two queries), but the way shown here is the optimum, because the minimum amount of queries are performed behind the hood.
+
+This is not really related to the `join_field` introduced in previous sections.
+
+In the example, 2 indices are created:
+
+- users who have a name and can follow other users
+- and stories, which are posted by users.
+
+The ultimate query which uses term lookup dynamically fetches all stories from users that User 1 follows, providing a live and up-to-date feed based on User 1's following list.
+
+```json
+// The idea behind is to use 
+// the values from another document 
+// to perform the search. 
+// We could do it in other ways (e.g., with two queries), 
+// but the way shown here is the optimum, 
+// because the minimum amount of queries 
+// are performed behind the hood.
+
+// First, user and stories indices are created and filled:
+// - users who have a name and can follow other users
+// - and stories, which are posted by users.
+PUT /users/_doc/1
+{
+  "name": "John Roberts",
+  "following" : [2, 3]
+}
+PUT /users/_doc/2
+{
+  "name": "Elizabeth Ross",
+  "following" : []
+}
+PUT /users/_doc/3
+{
+  "name": "Jeremy Brooks",
+  "following" : [1, 2]
+}
+PUT /users/_doc/4
+{
+  "name": "Diana Moore",
+  "following" : [3, 1]
+}
+PUT /stories/_doc/1
+{
+  "user": 3,
+  "content": "Wow look, a penguin!"
+}
+PUT /stories/_doc/2
+{
+  "user": 1,
+  "content": "Just another day at the office... #coffee"
+}
+PUT /stories/_doc/3
+{
+  "user": 1,
+  "content": "Making search great again! #elasticsearch #elk"
+}
+PUT /stories/_doc/4
+{
+  "user": 4,
+  "content": "Had a blast today! #rollercoaster #amusementpark"
+}
+PUT /stories/_doc/5
+{
+  "user": 4,
+  "content": "Yay, I just got hired as an Elasticsearch consultant - so excited!"
+}
+PUT /stories/_doc/6
+{
+  "user": 2,
+  "content": "Chilling at the beach @ Greece #vacation #goodtimes"
+}
+
+// Now, the term lookup query.
+// The idea behind is to use the values
+// from another document to perform the search.
+// We could do it in other ways (e.g., with 2 queries), 
+// but the way shown here is the optimum, 
+// because the minimum amount of queries 
+// are performed behind the hood.
+// Query: Retrieve all stories posted by users 
+// that user 1 is following.
+GET /stories/_search
+{
+  "query": {
+    "terms": {
+      "user": {
+        "index": "users",
+        "id": "1",
+        "path": "following"
+      }
+    }
+  }
+}
+```
 
 ## Controlling Query Results
 

@@ -2041,10 +2041,13 @@ GET /recipes/_search
 
 ## Joining Queries
 
-Contents
+Contents:
 
 - Mapping Document Relationships
 - Querying Related/Joined Documents
+- Multi-level Relations
+- Parent/Child Inner Hits
+- Terms Lookup Mechanism
 
 ```json
 // --- Mapping Document Relationships
@@ -2185,6 +2188,223 @@ GET /department/_search
             }
           ]
         }
+      }
+    }
+  }
+}
+
+// --- Multi-level Relations
+
+// We can extend the relations by adding
+// more parent-children pairs
+// Now, we have:
+// company -> 
+//    department ->
+//        employee
+//    supplier
+PUT /company
+{
+  "mappings": {
+    "properties": {
+      "join_field": { 
+        "type": "join",
+        "relations": {
+          // We add new relations as a key-value pairs (parent-children)
+          "company": ["department", "supplier"],
+          "department": "employee"
+        }
+      }
+    }
+  }
+}
+
+// Adding a company (ID: 1)
+PUT /company/_doc/1
+{
+  "name": "My Company Inc.",
+  "join_field": "company"
+}
+// Adding a department (ID: 2)
+PUT /company/_doc/2?routing=1
+{
+  "name": "Development",
+  "join_field": {
+    "name": "department",
+    "parent": 1
+  }
+}
+// Adding an employee (ID: 3)
+// NOTE: the rounting and parent values are different now!
+// - routing refers to the furtherst parent (company)
+// - parent refers to the next parent (department)
+PUT /company/_doc/3?routing=1
+{
+  "name": "Bo Andersen",
+  "join_field": {
+    "name": "employee",
+    "parent": 2
+  }
+}
+
+// Search: works similarly as before
+// Queries are nested one inside the other.
+// In this example, a company is returned
+// which has a department which has an employee
+// with the specified name
+GET /company/_search
+{
+  "query": {
+    "has_child": {
+      "type": "department",
+      "query": {
+        "has_child": {
+          "type": "employee",
+          "query": {
+            "term": {
+              "name.keyword": "John Doe"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// --- Parent/Child Inner Hits
+
+// Including inner hits for the `has_child` query.
+// Departments which have employees
+// which match the specified requirements;
+// inner hit employees are returned, too.
+GET /department/_search
+{
+  "query": {
+    "has_child": {
+      "type": "employee",
+      "inner_hits": {},
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "age": {
+                  "gte": 50
+                }
+              }
+            }
+          ],
+          "should": [
+            {
+              "term": {
+                "gender.keyword": "M"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+
+// Including inner hits for the `has_parent` query;
+// inner hit departments are returned, too
+// (in this case, it's trivial, i.e., only one Department)
+GET /department/_search
+{
+  "query": {
+    "has_parent": {
+      "inner_hits": {},
+      "parent_type": "department",
+      "query": {
+        "term": {
+          "name.keyword": "Development"
+        }
+      }
+    }
+  }
+}
+
+// --- Terms Lookup Mechanism
+
+// The idea behind is to use 
+// the values from another document 
+// to perform the search. 
+// We could do it in other ways (e.g., with two queries), 
+// but the way shown here is the optimum, 
+// because the minimum amount of queries 
+// are performed behind the hood.
+
+// First, user and stories indices are created and filled:
+// - users who have a name and can follow other users
+// - and stories, which are posted by users.
+PUT /users/_doc/1
+{
+  "name": "John Roberts",
+  "following" : [2, 3]
+}
+PUT /users/_doc/2
+{
+  "name": "Elizabeth Ross",
+  "following" : []
+}
+PUT /users/_doc/3
+{
+  "name": "Jeremy Brooks",
+  "following" : [1, 2]
+}
+PUT /users/_doc/4
+{
+  "name": "Diana Moore",
+  "following" : [3, 1]
+}
+PUT /stories/_doc/1
+{
+  "user": 3,
+  "content": "Wow look, a penguin!"
+}
+PUT /stories/_doc/2
+{
+  "user": 1,
+  "content": "Just another day at the office... #coffee"
+}
+PUT /stories/_doc/3
+{
+  "user": 1,
+  "content": "Making search great again! #elasticsearch #elk"
+}
+PUT /stories/_doc/4
+{
+  "user": 4,
+  "content": "Had a blast today! #rollercoaster #amusementpark"
+}
+PUT /stories/_doc/5
+{
+  "user": 4,
+  "content": "Yay, I just got hired as an Elasticsearch consultant - so excited!"
+}
+PUT /stories/_doc/6
+{
+  "user": 2,
+  "content": "Chilling at the beach @ Greece #vacation #goodtimes"
+}
+
+// Now, the term lookup query.
+// The idea behind is to use the values
+// from another document to perform the search.
+// We could do it in other ways (e.g., with 2 queries), 
+// but the way shown here is the optimum, 
+// because the minimum amount of queries 
+// are performed behind the hood.
+// Query: Retrieve all stories posted by users 
+// that user 1 is following.
+GET /stories/_search
+{
+  "query": {
+    "terms": {
+      "user": {
+        "index": "users",
+        "id": "1",
+        "path": "following"
       }
     }
   }

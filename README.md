@@ -4832,9 +4832,15 @@ GET /recipes/_search
 
 ## Aggregations
 
-TBD.
+Aggregations are related to the aggregations in relational databases (RDB), but in fact, in Elasticsearch, they can be more powerful that the ones in RDBs.
 
-:construction:
+Example: let's consider the case in which we have `products` and `orders`; we can run aggregations to group orders by product id and sum the total amount of sold value.
+
+In this section, new indices must be created and the JSON [`orders-bulk.json`](./notebooks/orders-bulk.json) must be ingested. The following lines show the mapping that needs to be created. Additionally, there is a section in the notebook [`elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb) in which the bulk indexing is run.
+
+```json
+
+```
 
 ## Improving Search Results
 

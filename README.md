@@ -47,6 +47,7 @@ Table of contents:
     - [Adding Nodes to the Cluster](#adding-nodes-to-the-cluster)
     - [Node Roles](#node-roles)
   - [Managing Documents](#managing-documents)
+    - [Warning: Mapping Types are Deprecated](#warning-mapping-types-are-deprecated)
     - [Creating and Deleting Indices](#creating-and-deleting-indices)
     - [Indexing and Deleting Documents](#indexing-and-deleting-documents)
     - [Retrieving Documents by ID](#retrieving-documents-by-id)
@@ -112,6 +113,9 @@ Table of contents:
     - [Parent/Child Inner Hits](#parentchild-inner-hits)
     - [Terms Lookup Mechanism](#terms-lookup-mechanism)
   - [Controlling Query Results](#controlling-query-results)
+    - [Specifying the Result Format](#specifying-the-result-format)
+    - [Source Filtering](#source-filtering)
+    - [Specifying the Result Size](#specifying-the-result-size)
   - [Aggregations](#aggregations)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
@@ -955,6 +959,17 @@ The field `node.role` in the response table contains the initial letters of each
 ![Nodes](./assets/nodes.png)
 
 ## Managing Documents
+
+### Warning: Mapping Types are Deprecated
+
+NOTE: There used to be mapping types in Elasticsearch, which is not the case anymore. Maybe in some cases the old query style that takes those mapping types is used, which contains the `default` keyword; this needs to be changed to the new syntax:
+
+```json
+// Old syntax
+GET /products/default/_search
+// New syntax
+GET /products/_search
+```
 
 ### Creating and Deleting Indices
 
@@ -4620,9 +4635,94 @@ GET /stories/_search
 
 ## Controlling Query Results
 
-TBD.
+There are several ways to control or modify the results we obtain from our queries.
 
-:construction:
+### Specifying the Result Format
+
+```json
+// YAML format output
+GET /recipes/_search?format=yaml
+{
+    "query": {
+      "match": { "title": "pasta" }
+    }
+}
+
+// Returning pretty JSON
+// This is helpful when we're debugging
+// in the Terminal.
+GET /recipes/_search?pretty
+{
+    "query": {
+      "match": { "title": "pasta" }
+    }
+}
+```
+
+### Source Filtering
+
+Sometimes the `_source` is not necessary at all, and we can decide to restrict its returned content to increase performance.
+
+```json
+// Sometimes the `_source` is not necessary at all,
+// and we can decide to restrict 
+// its returned content to increase performance.
+// We can specify to return given keys/objects within the source
+GET /recipes/_search
+{
+  "_source": false, // exclude source
+  //"_source": "created", // only return field "created"
+  //"_source": "ingredients.name", // only return "ingredients" object's key "name"
+  //"_source": "ingredients.*", // return all object's keys 
+  //"_source": [ "ingredients.*", "servings" ], // returns "ingredient" object's keys and "servings field"
+  "query": {
+    "match": { "title": "pasta" }
+  }
+}
+
+// Also, we can be more selective, e.g.:
+// Including all of the `ingredients` object's keys, except the `name` key
+// (this query doesn't really make sense)
+GET /recipes/_search
+{
+  "_source": {
+    "includes": "ingredients.*",
+    "excludes": "ingredients.name"
+  },
+  "query": {
+    "match": { "title": "pasta" }
+  }
+}
+```
+
+### Specifying the Result Size
+
+We can specify how many items we'd like to get in return.
+
+```json
+// Using a query parameter
+GET /recipes/_search?size=2
+{
+  "_source": false,
+  "query": {
+    "match": {
+      "title": "pasta"
+    }
+  }
+}
+
+// Using a parameter within the request body
+GET /recipes/_search
+{
+  "_source": false,
+  "size": 2,
+  "query": {
+    "match": {
+      "title": "pasta"
+    }
+  }
+}
+```
 
 ## Aggregations
 

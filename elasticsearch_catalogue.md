@@ -13,6 +13,7 @@ Table of contents:
   - [Mappings](#mappings)
   - [Search](#search)
   - [Joining Queries](#joining-queries)
+  - [Controlling Query Results](#controlling-query-results)
 
 
 ## Basic
@@ -2406,6 +2407,93 @@ GET /stories/_search
         "id": "1",
         "path": "following"
       }
+    }
+  }
+}
+```
+
+## Controlling Query Results
+
+Contents:
+
+- Specifying the Result Format
+- Source Filtering
+- Specifying the Result Size
+
+```json
+// -- Specifying the Result Format
+
+// YAML format output
+GET /recipes/_search?format=yaml
+{
+    "query": {
+      "match": { "title": "pasta" }
+    }
+}
+
+// Returning pretty JSON
+// This is helpful when we're debugging
+// in the Terminal.
+GET /recipes/_search?pretty
+{
+    "query": {
+      "match": { "title": "pasta" }
+    }
+}
+
+// --- Source Filtering
+
+// Sometimes the `_source` is not necessary at all,
+// and we can decide to restrict 
+// its returned content to increase performance.
+// We can specify to return given keys/objects within the source
+GET /recipes/_search
+{
+  "_source": false, // exclude source
+  //"_source": "created", // only return field "created"
+  //"_source": "ingredients.name", // only return "ingredients" object's key "name"
+  //"_source": "ingredients.*", // return all object's keys 
+  //"_source": [ "ingredients.*", "servings" ], // returns "ingredient" object's keys and "servings field"
+  "query": {
+    "match": { "title": "pasta" }
+  }
+}
+
+// Also, we can be more selective, e.g.:
+// Including all of the `ingredients` object's keys, except the `name` key
+// (this query doesn't really make sense)
+GET /recipes/_search
+{
+  "_source": {
+    "includes": "ingredients.*",
+    "excludes": "ingredients.name"
+  },
+  "query": {
+    "match": { "title": "pasta" }
+  }
+}
+
+// --- Specifying the Result Size
+
+// Using a query parameter
+GET /recipes/_search?size=2
+{
+  "_source": false,
+  "query": {
+    "match": {
+      "title": "pasta"
+    }
+  }
+}
+
+// Using a parameter within the request body
+GET /recipes/_search
+{
+  "_source": false,
+  "size": 2,
+  "query": {
+    "match": {
+      "title": "pasta"
     }
   }
 }

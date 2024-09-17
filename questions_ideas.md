@@ -8,7 +8,7 @@
 
 - Currently, the standard way of integrating ES is to duplicate the DB data into ES; isn't that a waste of resources?
 
-- Have they considered going beyond the REST API style as 
+- Have they considered going beyond the REST API style?
 
 ## Ideas
 

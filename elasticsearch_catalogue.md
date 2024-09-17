@@ -2598,6 +2598,7 @@ Contents:
 - Metric Aggregations
 - Bucket Aggregations
 - Nested Aggregations
+- Filtering Out Documents
 
 
 ```json
@@ -2835,6 +2836,54 @@ GET /orders/_search
       "aggs": {
         "status_stats": {
           "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+
+// --- Filtering Out Documents
+
+// Instead of filtering in the search query
+// and then running nested aggregations, 
+// we can directly filter in the aggregation queries.
+// Example: Filtering out documents with low `total_amount`,
+// we get the doc count.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "low_value": {
+      "filter": {
+        "range": {
+          "total_amount": {
+            "lt": 50
+          }
+        }
+      }
+    }
+  }
+}
+
+// We can go beyond and add sub-aggregation queries.
+// Example: Aggregating on the bucket of remaining documents
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "low_value": {
+      "filter": {
+        "range": {
+          "total_amount": {
+            "lt": 50
+          }
+        }
+      },
+      "aggs": {
+        "avg_amount": {
+          "avg": {
             "field": "total_amount"
           }
         }

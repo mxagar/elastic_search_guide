@@ -119,6 +119,8 @@ Table of contents:
     - [Pagination](#pagination)
     - [Sorting Results](#sorting-results)
   - [Aggregations](#aggregations)
+    - [Metric Aggregations](#metric-aggregations)
+    - [Bucket Aggregations](#bucket-aggregations)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
   - [Logstash](#logstash)
@@ -4927,6 +4929,207 @@ orders:
         type: "keyword"
       total_amount:
         type: "double"
+```
+
+### Metric Aggregations
+
+[Metric aggregations](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics.html) in Elasticsearch are the same as in relational databases (RDB).
+
+There are two types of metric aggregations:
+
+- Single-value numeric metric aggregations: they yield one value.
+- Multi-value numeric metric aggregations: they yield multiple values.
+
+```json
+// Calculating statistics with `sum`, `avg`, `min`, and `max` aggregations
+// We use the _search API,
+// where we can specify a search query (a range query);
+// but we don't really need to write a search query,
+// instead we can run an aggs query and specify 
+// the field + operation (sum, avg, min, max).
+// Without search query, all documents are considered.
+GET /orders/_search
+{
+  "size": 0, // otherwise, used documents are also output
+  "aggs": {
+    "total_sales": { // arbitraty name of the aggregation
+      "sum": { // type of aggregation operation
+        "field": "total_amount" // field name to be aggregated with peration
+      }
+    },
+    "avg_sale": {
+      "avg": {
+        "field": "total_amount"
+      }
+    },
+    "min_sale": {
+      "min": {
+        "field": "total_amount"
+      }
+    },
+    "max_sale": {
+      "max": {
+        "field": "total_amount"
+      }
+    }
+  }
+}
+
+// Retrieving the number of distinct values
+// with the operation cardinality.
+// Watch out: approximate numbers produced...
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "total_salesmen": {
+      "cardinality": {
+        "field": "salesman.id"
+      }
+    }
+  }
+}
+
+// Retrieving the number of values
+// with value_count
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "values_count": {
+      "value_count": {
+        "field": "total_amount"
+      }
+    }
+  }
+}
+
+// Using `stats` aggregation for common statistics:
+// count, min, max, avg, sum
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_stats": {
+      "stats": {
+        "field": "total_amount"
+      }
+    }
+  }
+}
+```
+
+### Bucket Aggregations
+
+Bucket aggregations create sets (i.e., buckets) of documents instead of metrics.
+
+To create bucket aggregations the `terms` query is used, however, we should keep in mind that the count results obtained from this query are approximations, because of the distirbuted nature of Elasticsearch.
+
+Recall that an index is split into multiple shards in different nodes; the coordinator node sends the request to all nodes/shards, gets back their answer and yields the final compiled answer to the user.
+
+The situations in which the compilation might yield incorrect count values are the following:
+
+- Imagine we want to get the top 3 products in terms of sales.
+- The query is sent to the 3 shards of the products index and each returns the counts of the top `n = 5` products.
+- Then, all results are compiled to create the overall ranking of top 3 by using those top 5 from each shard.
+- However, maybe there was a top product below the 5th position in one of the shards, which is within the top 3 in another shard. Thus, the real count value of that product is not correctly computed.
+
+Solution: if we are using several shards per index, use larger `n = size` values; the default and implicit value of `size` is 10.
+
+```json
+// Bucket aggregations create sets (i.e., buckets) of documents instead of metrics.
+// "terms" is a bucket aggregation operation
+// with which we create a bucket of each of the possible terms/values
+// in the field we specify.
+// WARNING: counts from "terms" can be approximate
+// if we are using distributed shards and use small
+// top-n queries with small n=size values.
+// The default size is 10; we can in crease it
+// if we want a higher accuracy.
+// Example: Creating a bucket for each `status` value.
+// The values are returned as
+// - "key": one possible value
+// - "doc_count": number of documents with the possible value
+// WARNING: unless we change it, only the first unique 10 terms
+// are use dto create the buckets.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status"
+      }
+    }
+  }
+}
+
+// Including `20` terms instead of the default `10`
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status",
+        "size": 20
+      }
+    }
+  }
+}
+
+// Aggregating documents with missing field (or `NULL`)
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status",
+        "size": 20,
+        "missing": "N/A"
+      }
+    }
+  }
+}
+
+// Changing the minimum document count for a bucket to be created
+// Usage example: here N/A does not really appear, so no bucket
+// is created; however, if we set "min_doc_count": 0, then
+// we will get a bucket of 0 documents also for the value "N/A"
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status",
+        "size": 20,
+        "missing": "N/A",
+        "min_doc_count": 0
+      }
+    }
+  }
+}
+
+// Ordering the buckets
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status",
+        "size": 20,
+        "missing": "N/A",
+        "min_doc_count": 0,
+        "order": {
+          "_key": "asc"
+        }
+      }
+    }
+  }
+}
 ```
 
 ## Improving Search Results

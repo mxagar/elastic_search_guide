@@ -4836,10 +4836,97 @@ Aggregations are related to the aggregations in relational databases (RDB), but 
 
 Example: let's consider the case in which we have `products` and `orders`; we can run aggregations to group orders by product id and sum the total amount of sold value.
 
-In this section, new indices must be created and the JSON [`orders-bulk.json`](./notebooks/orders-bulk.json) must be ingested. The following lines show the mapping that needs to be created. Additionally, there is a section in the notebook [`elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb) in which the bulk indexing is run.
+In this section, new indices must be created and the JSON [`orders-bulk.json`](./notebooks/orders-bulk.json) must be ingested. First, the following lines show the mapping that needs to be created. 
 
 ```json
+PUT /orders
+{
+  "mappings": {
+    "properties": {
+      "purchased_at": {
+        "type": "date"
+      },
+      "lines": {
+        "type": "nested",
+        "properties": {
+          "product_id": {
+            "type": "integer"
+          },
+          "amount": {
+            "type": "double"
+          },
+          "quantity": {
+            "type": "short"
+          }
+        }
+      },
+      "total_amount": {
+        "type": "double"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "sales_channel": {
+        "type": "keyword"
+      },
+      "salesman": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "text"
+          }
+        }
+      }
+    }
+  }
+}
+```
 
+Then, there is a section in the notebook [`elastic_intro.ipynb`](./notebooks/elastic_intro.ipynb) in which the bulk indexing is run to ingest [`orders-bulk.json`](./notebooks/orders-bulk.json). Alternatively, we'd have to run the following `cURL` command:
+
+```bash
+# macOS & Linux
+# If hosted Elasticsearch deployment, remove the `--cacert` argument.
+curl --cacert config/certs/http_ca.crt -u elastic -H "Content-Type:application/x-ndjson" -X POST https://localhost:9200/orders/_bulk --data-binary "@orders-bulk.json"
+
+# Windows
+# If hosted Elasticsearch deployment, remove the `--cacert` argument.
+curl --cacert config\certs\http_ca.crt -u elastic -H "Content-Type:application/x-ndjson" -X POST https://localhost:9200/orders/_bulk --data-binary "@orders-bulk.json"
+```
+
+Once the mapping and the ingestion have been done, we should get an index with this specification:
+
+```yaml
+# GET /orders/_mapping?format=yaml
+orders:
+  mappings:
+    properties:
+      lines:
+        type: "nested"
+        properties:
+          amount:
+            type: "double"
+          product_id:
+            type: "integer"
+          quantity:
+            type: "short"
+      purchased_at:
+        type: "date"
+      sales_channel:
+        type: "keyword"
+      salesman:
+        properties:
+          id:
+            type: "integer"
+          name:
+            type: "text"
+      status:
+        type: "keyword"
+      total_amount:
+        type: "double"
 ```
 
 ## Improving Search Results

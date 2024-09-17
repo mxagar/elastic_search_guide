@@ -121,9 +121,10 @@ Table of contents:
   - [Aggregations](#aggregations)
     - [Metric Aggregations](#metric-aggregations)
     - [Bucket Aggregations](#bucket-aggregations)
+    - [Nested Aggregations](#nested-aggregations)
+    - [Filtering Out Documents](#filtering-out-documents)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
-  - [Logstash](#logstash)
   - [License](#license)
 
 
@@ -4940,10 +4941,16 @@ There are two types of metric aggregations:
 - Single-value numeric metric aggregations: they yield one value.
 - Multi-value numeric metric aggregations: they yield multiple values.
 
+Aggregations run always in a search query context, which by default (implicitly) is `match_all`, i.e., if not other explicit search query used.
+
 ```json
-// Calculating statistics with `sum`, `avg`, `min`, and `max` aggregations
+// Aggregations are similar to the ones in SQL
+// Aggregations run always in a search query context, 
+// which by default (implicitly) is `match_all`,
+// i.e., if not other explicit search query used.
+// Example: Calculating statistics with `sum`, `avg`, `min`, and `max` aggregations.
 // We use the _search API,
-// where we can specify a search query (a range query);
+// where we can specify any search query (e.g., range query);
 // but we don't really need to write a search query,
 // instead we can run an aggs query and specify 
 // the field + operation (sum, avg, min, max).
@@ -5023,7 +5030,7 @@ GET /orders/_search
 
 Bucket aggregations create sets (i.e., buckets) of documents instead of metrics.
 
-To create bucket aggregations the `terms` query is used, however, we should keep in mind that the count results obtained from this query are approximations, because of the distirbuted nature of Elasticsearch.
+To create bucket aggregations the `terms` query is used with `aggs`, however, we should keep in mind that the count results obtained from this query are approximations, because of the distirbuted nature of Elasticsearch.
 
 Recall that an index is split into multiple shards in different nodes; the coordinator node sends the request to all nodes/shards, gets back their answer and yields the final compiled answer to the user.
 
@@ -5038,9 +5045,10 @@ Solution: if we are using several shards per index, use larger `n = size` values
 
 ```json
 // Bucket aggregations create sets (i.e., buckets) of documents instead of metrics.
-// "terms" is a bucket aggregation operation
-// with which we create a bucket of each of the possible terms/values
-// in the field we specify.
+// We use the "terms" operation within "aggs",
+// that way we create a bucket of each of the possible
+// terms/values in the field we specify.
+// Bucket aggregations are similar to GROUP BY in SQL.
 // WARNING: counts from "terms" can be approximate
 // if we are using distributed shards and use small
 // top-n queries with small n=size values.
@@ -5132,6 +5140,76 @@ GET /orders/_search
 }
 ```
 
+### Nested Aggregations
+
+Nested aggregations are sub-aggregations, i.e., bucket aggregations of bucket aggregations. The syntax is the same as before, we simply we nest `aggs` within `aggs`.
+
+```json
+// Nested aggregations are sub-aggregations, 
+// i.e., bucket aggregations of bucket aggregations.
+// The syntax is the same as before, 
+// we simply we nest `aggs` within `aggs`.
+// Retrieving statistics for each status
+// First, we create buckets for each status
+// then, we apply a metric aggregation for each bucket.
+// As a result here, we get the stats for each bucket/group.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status"
+      },
+      "aggs": {
+        "status_stats": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+
+// Narrowing down the aggregation context
+// Implicitly, match_all is used, i.e., all documents
+// are used, but we can run a search query which
+// narrows down to a subset; e.g.: a range query.
+// Recall: aggregations run always in a search query context
+// which is match_all (i.e., all documents) if no other query specified.
+// Here, a range query is used.
+GET /orders/_search
+{
+  "size": 0,
+  "query": {
+    "range": {
+      "total_amount": {
+        "gte": 100
+      }
+    }
+  },
+  "aggs": {
+    "status_terms": {
+      "terms": {
+        "field": "status"
+      },
+      "aggs": {
+        "status_stats": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Filtering Out Documents
+
+
+
 ## Improving Search Results
 
 TBD.
@@ -5141,12 +5219,6 @@ TBD.
 ## Kibana
 
 See [`./kibana/`](./kibana/).
-
-## Logstash
-
-TBD.
-
-:construction:
 
 ## License
 

@@ -127,6 +127,7 @@ Table of contents:
     - [Range Aggregations](#range-aggregations)
     - [Histograms](#histograms)
     - [Global Aggregation](#global-aggregation)
+    - [Missing Field Values](#missing-field-values)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
   - [License](#license)
@@ -5593,7 +5594,117 @@ GET /orders/_search
 
 ### Global Aggregation
 
+When we run a search query, we set a document context composed of the documents that match that query. Then, if we apply an aggregation, it is carried out on those selected documents. However, we can break that selection and apply the aggregation to all the documents by specifying the objecy `global`.
 
+```json
+// When we run a search query, 
+// we set a document context composed of the documents
+// that match that query. 
+// Then, if we apply an aggregation, 
+// it is carried out on those selected documents.
+// However, we can break that selection
+// and apply the aggregation to all the documents
+// by specifying the objecy `global`.
+// Example: Break out of the aggregation context
+GET /orders/_search
+{
+  "query": {
+    "range": {
+      "total_amount": {
+        "gte": 100
+      }
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "all_orders": {
+      "global": { },
+      "aggs": {
+        "stats_amount": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+
+// The whole global exemption makes sense
+// if we want to create aggregation buckets
+// with different scopes together/simultaneously.
+// Example: Adding aggregation without global context.
+// Check how the counts for each bucket are different
+GET /orders/_search
+{
+  "query": {
+    "range": {
+      "total_amount": {
+        "gte": 100
+      }
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "all_orders": {
+      "global": { },
+      "aggs": {
+        "stats_amount": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    },
+    "stats_expensive": {
+      "stats": {
+        "field": "total_amount"
+      }
+    }
+  }
+}
+```
+
+### Missing Field Values
+
+We can group documents which have a `null` or missing value in a field using `aggs` and `missing`.
+
+```json
+// Aggregating documents with missing field value
+// This aggregation with `missing`
+// finds all documents with a status field value null
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "orders_without_status": {
+      "missing": {
+        "field": "status"
+      }
+    }
+  }
+}
+
+// Combining `missing` aggregation with other aggregations
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "orders_without_status": {
+      "missing": {
+        "field": "status"
+      },
+      "aggs": {
+        "missing_sum": {
+          "sum": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+```
 
 ## Improving Search Results
 

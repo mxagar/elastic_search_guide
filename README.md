@@ -128,6 +128,7 @@ Table of contents:
     - [Histograms](#histograms)
     - [Global Aggregation](#global-aggregation)
     - [Missing Field Values](#missing-field-values)
+    - [Aggregation of Nested Objects](#aggregation-of-nested-objects)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
   - [License](#license)
@@ -5698,6 +5699,47 @@ GET /orders/_search
         "missing_sum": {
           "sum": {
             "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Aggregation of Nested Objects
+
+If we have nested fields and we want to run aggregations on them we need to use `aggs` and `nested`
+
+```json
+// Example: This query returns a bucket with all the employees
+// because no filtering is applied.
+GET /department/_search
+{
+  "size": 0,
+  "aggs": {
+    "employees": {
+      "nested": {
+        "path": "employees" // higher level object
+      }
+    }
+  }
+}
+
+// We can use any sub-aggregation with
+// the buckets we have created.
+GET /department/_search
+{
+  "size": 0,
+  "aggs": {
+    "employees": {
+      "nested": {
+        "path": "employees"
+      },
+      "aggs": {
+        "minimum_age": {
+          "min": {
+            "field": "employees.age"
           }
         }
       }

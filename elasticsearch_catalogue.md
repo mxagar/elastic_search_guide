@@ -2604,6 +2604,7 @@ Contents:
 - Histograms
 - Global Aggregations
 - Missing Field Values
+- Aggregation of Nested Objects
 
 
 ```json
@@ -3187,6 +3188,43 @@ GET /orders/_search
     "orders_without_status": {
       "missing": {
         "field": "status"
+      }
+    }
+  }
+}
+
+// --- Aggregation of Nested Objects
+
+// Example: This query returns a bucket with all the employees
+// because no filtering is applied.
+GET /department/_search
+{
+  "size": 0,
+  "aggs": {
+    "employees": {
+      "nested": {
+        "path": "employees" // higher level object
+      }
+    }
+  }
+}
+
+// We can use any sub-aggregation with
+// the buckets we have created.
+GET /department/_search
+{
+  "size": 0,
+  "aggs": {
+    "employees": {
+      "nested": {
+        "path": "employees"
+      },
+      "aggs": {
+        "minimum_age": {
+          "min": {
+            "field": "employees.age"
+          }
+        }
       }
     }
   }

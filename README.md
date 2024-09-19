@@ -123,6 +123,10 @@ Table of contents:
     - [Bucket Aggregations](#bucket-aggregations)
     - [Nested Aggregations](#nested-aggregations)
     - [Filtering Out Documents](#filtering-out-documents)
+    - [Bucket Rules with Filters](#bucket-rules-with-filters)
+    - [Range Aggregations](#range-aggregations)
+    - [Histograms](#histograms)
+    - [Global Aggregation](#global-aggregation)
   - [Improving Search Results](#improving-search-results)
   - [Kibana](#kibana)
   - [License](#license)
@@ -5257,6 +5261,339 @@ GET /orders/_search
   }
 }
 ```
+
+### Bucket Rules with Filters
+
+Instead of using `aggs` and `terms`, we can use `aggs` and `filters`. The `filters` aggregation query allows to specify any criteria for our bucket, it doesn't need to be constrained to the levels (i.e., unique values) a field has.
+
+The query `filters`:
+
+- Has another field `filters` within it and we define filter objects within it, which contain any search queries. For each search query, a bucket is created.
+- It also can have an `aggs` field which describes a subsggregation on the filtered bucket.
+
+```json
+// Instead of using `aggs` and `terms`,
+// we can use `aggs` and `filters`. 
+// The `filters` aggregation query allows
+// to specify any criteria for our bucket,
+// it doesn't need to be constrained to the levels 
+// (i.e., unique values) a field has.
+// Example: Placing documents into buckets based on criteria
+GET /recipes/_search
+{
+  "size": 0,
+  "aggs": {
+    "my_filter": {
+      "filters": {
+        "filters": {
+          "pasta": {
+            "match": {
+              "title": "pasta"
+            }
+          },
+          "spaghetti": {
+            "match": {
+              "title": "spaghetti"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Example: Calculate average ratings for buckets
+// We can define subaggregations within `filters`
+GET /recipes/_search
+{
+  "size": 0,
+  "aggs": {
+    "my_filter": {
+      "filters": {
+        "filters": {
+          "pasta": {
+            "match": {
+              "title": "pasta"
+            }
+          },
+          "spaghetti": {
+            "match": {
+              "title": "spaghetti"
+            }
+          }
+        }
+      },
+      "aggs": {
+        "avg_rating": {
+          "avg": {
+            "field": "ratings"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Range Aggregations
+
+Another way to create buckets are `range` aggregations, which can be:
+
+- `range`
+- `date_range`
+
+They do the same, but one focuses on numbers and the other on dates.
+
+```json
+// With `range` aggregation
+// we can create buckets associated to a range of a field
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_distribution": {
+      "range": {
+        "field": "total_amount",
+        "ranges": [ // we create 3 buckets, each associated with a range
+          {
+            "to": 50 // [0,50]
+          },
+          {
+            "from": 50,
+            "to": 100
+          },
+          {
+            "from": 100 // [100, inf)
+          }
+        ]
+      }
+    }
+  }
+}
+
+// The operation `date_range` aggregation
+// is the same as `range`, but for dates.
+// We can also define keys (i.e., names) for buckets
+// as done below.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "purchased_ranges": {
+      "date_range": {
+        "field": "purchased_at",
+        "ranges": [
+          {
+            "from": "2016-01-01",
+            "to": "2016-01-01||+6M" // date math: +6 months
+          },
+          {
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+1y"
+          }
+        ]
+      }
+    }
+  }
+}
+
+// Specifying the date format
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "purchased_ranges": {
+      "date_range": {
+        "field": "purchased_at",
+        "format": "yyyy-MM-dd",
+        "ranges": [
+          {
+            "from": "2016-01-01",
+            "to": "2016-01-01||+6M"
+          },
+          {
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+1y"
+          }
+        ]
+      }
+    }
+  }
+}
+
+// Enabling keys for the buckets
+// A key (i.e., name) is added to each bucket.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "purchased_ranges": {
+      "date_range": {
+        "field": "purchased_at",
+        "format": "yyyy-MM-dd",
+        "keyed": true,
+        "ranges": [
+          {
+            "from": "2016-01-01",
+            "to": "2016-01-01||+6M"
+          },
+          {
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+1y"
+          }
+        ]
+      }
+    }
+  }
+}
+
+// Defining the bucket keys manually
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "purchased_ranges": {
+      "date_range": {
+        "field": "purchased_at",
+        "format": "yyyy-MM-dd",
+        "keyed": true,
+        "ranges": [
+          {
+            "from": "2016-01-01",
+            "to": "2016-01-01||+6M",
+            "key": "first_half"
+          },
+          {
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+1y",
+            "key": "second_half"
+          }
+        ]
+      }
+    }
+  }
+}
+
+// Adding a sub-aggregation
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "purchased_ranges": {
+      "date_range": {
+        "field": "purchased_at",
+        "format": "yyyy-MM-dd",
+        "keyed": true,
+        "ranges": [
+          {
+            "from": "2016-01-01",
+            "to": "2016-01-01||+6M",
+            "key": "first_half"
+          },
+          {
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+1y",
+            "key": "second_half"
+          }
+        ]
+      },
+      "aggs": {
+        "bucket_stats": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Histograms
+
+Histograms are a bucket aggregation in which we simply define an interval and the documents are grouped depending on the interval they belong to.
+
+```json
+// Histograms are a bucket aggregation 
+// in which we simply define an interval 
+// and the documents are grouped depending on 
+// the interval they belong to.
+// Example: Distribution of `total_amount` with interval `25`
+// Buckets are created every 25
+// and documents assigned to them.
+// Note that we could have empty buckets.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_distribution": {
+      "histogram": {
+        "field": "total_amount",
+        "interval": 25
+      }
+    }
+  }
+}
+
+// Requiring minimum 1 document per bucket
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_distribution": {
+      "histogram": {
+        "field": "total_amount",
+        "interval": 25,
+        "min_doc_count": 1
+      }
+    }
+  }
+}
+
+// Specifying fixed bucket boundaries
+GET /orders/_search
+{
+  "size": 0,
+  "query": {
+    "range": {
+      "total_amount": {
+        "gte": 100
+      }
+    }
+  },
+  "aggs": {
+    "amount_distribution": {
+      "histogram": {
+        "field": "total_amount",
+        "interval": 25,
+        "min_doc_count": 0,
+        "extended_bounds": {
+          "min": 0,
+          "max": 500
+        }
+      }
+    }
+  }
+}
+
+// Aggregating by month with the `date_histogram` aggregation
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "orders_over_time": {
+      "date_histogram": {
+        "field": "purchased_at",
+        "calendar_interval": "month"
+      }
+    }
+  }
+}
+```
+
+### Global Aggregation
+
+
 
 ## Improving Search Results
 

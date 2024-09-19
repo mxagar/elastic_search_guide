@@ -2599,6 +2599,9 @@ Contents:
 - Bucket Aggregations
 - Nested Aggregations
 - Filtering Out Documents
+- Bucket Rules with Filters
+- Range Aggregations
+- Histograms
 
 
 ```json
@@ -2892,4 +2895,212 @@ GET /orders/_search
   }
 }
 
+// --- Bucket Rules with Filters
+
+// Instead of using `aggs` and `terms`,
+// we can use `aggs` and `filters`. 
+// The `filters` aggregation query allows
+// to specify any criteria for our bucket,
+// it doesn't need to be constrained to the levels 
+// (i.e., unique values) a field has.
+// Example: Placing documents into buckets based on criteria
+GET /recipes/_search
+{
+  "size": 0,
+  "aggs": {
+    "my_filter": {
+      "filters": {
+        "filters": {
+          "pasta": {
+            "match": {
+              "title": "pasta"
+            }
+          },
+          "spaghetti": {
+            "match": {
+              "title": "spaghetti"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Example: Calculate average ratings for buckets
+// We can define subaggregations within `filters`
+GET /recipes/_search
+{
+  "size": 0,
+  "aggs": {
+    "my_filter": {
+      "filters": {
+        "filters": {
+          "pasta": {
+            "match": {
+              "title": "pasta"
+            }
+          },
+          "spaghetti": {
+            "match": {
+              "title": "spaghetti"
+            }
+          }
+        }
+      },
+      "aggs": {
+        "avg_rating": {
+          "avg": {
+            "field": "ratings"
+          }
+        }
+      }
+    }
+  }
+}
+
+// --- Range Aggregations
+
+// With `range` aggregation
+// we can create buckets associated to a range of a field
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_distribution": {
+      "range": {
+        "field": "total_amount",
+        "ranges": [ // we create 3 buckets, each associated with a range
+          {
+            "to": 50 // [0,50]
+          },
+          {
+            "from": 50,
+            "to": 100
+          },
+          {
+            "from": 100 // [100, inf)
+          }
+        ]
+      }
+    }
+  }
+}
+
+// The operation `date_range` aggregation
+// is the same as `range`, but for dates.
+// We can also 
+// - define keys (i.e., names) for buckets (manually or automatically)
+// - specify date formats
+// - and add sub-aggregations
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "purchased_ranges": {
+      "date_range": {
+        "field": "purchased_at",
+        "format": "yyyy-MM-dd",
+        "keyed": true,
+        "ranges": [
+          {
+            "from": "2016-01-01",
+            "to": "2016-01-01||+6M",
+            "key": "first_half"
+          },
+          {
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+1y",
+            "key": "second_half"
+          }
+        ]
+      },
+      "aggs": {
+        "bucket_stats": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+
+// --- Histograms
+
+// Histograms are a bucket aggregation 
+// in which we simply define an interval 
+// and the documents are grouped depending on 
+// the interval they belong to.
+// Example: Distribution of `total_amount` with interval `25`
+// Buckets are created every 25
+// and documents assigned to them.
+// Note that we could have empty buckets.
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_distribution": {
+      "histogram": {
+        "field": "total_amount",
+        "interval": 25
+      }
+    }
+  }
+}
+
+// Requiring minimum 1 document per bucket
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "amount_distribution": {
+      "histogram": {
+        "field": "total_amount",
+        "interval": 25,
+        "min_doc_count": 1
+      }
+    }
+  }
+}
+
+// Specifying fixed bucket boundaries
+GET /orders/_search
+{
+  "size": 0,
+  "query": {
+    "range": {
+      "total_amount": {
+        "gte": 100
+      }
+    }
+  },
+  "aggs": {
+    "amount_distribution": {
+      "histogram": {
+        "field": "total_amount",
+        "interval": 25,
+        "min_doc_count": 0,
+        "extended_bounds": {
+          "min": 0,
+          "max": 500
+        }
+      }
+    }
+  }
+}
+
+// Aggregating by month with the `date_histogram` aggregation
+GET /orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "orders_over_time": {
+      "date_histogram": {
+        "field": "purchased_at",
+        "calendar_interval": "month"
+      }
+    }
+  }
+}
 ```

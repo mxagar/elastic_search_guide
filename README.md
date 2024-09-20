@@ -135,7 +135,8 @@ Table of contents:
     - [Fuzzy Queries](#fuzzy-queries)
     - [Adding Synonyms](#adding-synonyms)
     - [Adding Synonyms from File](#adding-synonyms-from-file)
-    - [HIghlightling Matches in Fields](#highlightling-matches-in-fields)
+    - [Highlighting Matches in Fields](#highlighting-matches-in-fields)
+    - [Stemming](#stemming)
   - [Kibana](#kibana)
   - [License](#license)
 
@@ -5922,8 +5923,8 @@ GET /products/_search
 }
 
 // Switching letters around with transpositions,
-// one transoposition is one edit distance unit.
-// Transpotions can be disabled (enabled by default).
+// one transposition is one edit distance unit.
+// Transpositions can be disabled (enabled by default).
 GET /products/_search
 {
   "query": {
@@ -6126,9 +6127,144 @@ elasticsearch, logstash, kibana => elk
 weird, strange
 ```
 
-### HIghlightling Matches in Fields
+### Highlighting Matches in Fields
 
+We can return an array of highlighted text parts where the searched tokens are matched.
 
+```json
+// We can return an array of highlighted text parts
+// where the searched tokens are matched.
+// Example test document
+PUT /highlighting/_doc/1
+{
+  "description": "Let me tell you a story about Elasticsearch. It's a full-text search engine that is built on Apache Lucene. It's really easy to use, but also packs lots of advanced features that you can use to tweak its searching capabilities. Lots of well-known and established companies use Elasticsearch, and so should you!"
+}
+
+// Highlighting matches within the `description` field.
+// The returned matches have a highlight object
+// which contains an array with the found tokens highlighted in <em> tags
+// along with the surrounding words.
+GET /highlighting/_search
+{
+  "_source": false,
+  "query": {
+    "match": { "description": "Elasticsearch story" }
+  },
+  "highlight": {
+    "fields": { // fields we want to highlight
+      "description" : {} // field we want to highlight
+    }
+  }
+}
+
+// We can specify a custom tag
+GET /highlighting/_search
+{
+  "_source": false,
+  "query": {
+    "match": { "description": "Elasticsearch story" }
+  },
+  "highlight": {
+    "pre_tags": [ "<strong>" ],
+    "post_tags": [ "</strong>" ],
+    "fields": {
+      "description" : {}
+    }
+  }
+}
+```
+
+### Stemming
+
+We can improve the matches of the search queries by applying stemming. If we create a custom analyzer to include synonyms, we should consider adding a language-based stemmer. Stemmed words can be similarly highlighted, too.
+
+```json
+// We can improve the matches of the search queries
+// by applying stemming. 
+// If we create a custom analyzer to include synonyms, 
+// we should consider adding a language-based stemmer.
+// Stemmed words can be similarly highlighted, too.
+// Example: Creating a test analyzer which has a stemmer.
+PUT /stemming_test
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "synonym_test": {
+          "type": "synonym",
+          "synonyms": [
+            "firm => company",
+            "love, enjoy"
+          ]
+        },
+        "stemmer_test" : {
+          "type" : "stemmer",
+          "name" : "english"
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "synonym_test",
+            "stemmer_test"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text",
+        "analyzer": "my_analyzer"
+      }
+    }
+  }
+}
+
+// Adding a test document
+PUT /stemming_test/_doc/1
+{
+  "description": "I love working for my firm!"
+}
+
+// Matching the document with the base word (`work`)
+GET /stemming_test/_search
+{
+  "query": {
+    "match": {
+      "description": "enjoy work"
+    }
+  }
+}
+
+// The query is stemmed, so the document still matches
+GET /stemming_test/_search
+{
+  "query": {
+    "match": {
+      "description": "love working"
+    }
+  }
+}
+
+// Synonyms and stemmed words are still highlighted
+GET /stemming_test/_search
+{
+  "query": {
+    "match": {
+      "description": "enjoy work"
+    }
+  },
+  "highlight": {
+    "fields": {
+      "description": {}
+    }
+  }
+}
+```
 
 ## Kibana
 

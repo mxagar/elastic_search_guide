@@ -3241,6 +3241,8 @@ Contents:
 - Fuzzy Queries
 - Adding Synonyms
 - Adding Synonyms from File
+- Highlighting Matches in Fields
+- Stemming
 
 ```json
 // --- Proximity Searches
@@ -3355,8 +3357,8 @@ GET /products/_search
 }
 
 // Switching letters around with transpositions,
-// one transoposition is one edit distance unit.
-// Transpotions can be disabled (enabled by default).
+// one transposition is one edit distance unit.
+// Transpositions can be disabled (enabled by default).
 GET /products/_search
 {
   "query": {
@@ -3525,4 +3527,80 @@ PUT /synonyms
     }
   }
 }
+
+// --- Highlighting Matches in Fields
+
+// We can return an array of highlighted text parts
+// where the searched tokens are matched.
+// Example test document
+PUT /highlighting/_doc/1
+{
+  "description": "Let me tell you a story about Elasticsearch. It's a full-text search engine that is built on Apache Lucene. It's really easy to use, but also packs lots of advanced features that you can use to tweak its searching capabilities. Lots of well-known and established companies use Elasticsearch, and so should you!"
+}
+
+// Highlighting matches within the `description` field.
+// The returned matches have a highlight object
+// which contains an array with the found tokens highlighted in <em> tags
+// along with the surrounding words.
+GET /highlighting/_search
+{
+  "_source": false,
+  "query": {
+    "match": { "description": "Elasticsearch story" }
+  },
+  "highlight": {
+    "fields": { // fields we want to highlight
+      "description" : {} // field we want to highlight
+    }
+  }
+}
+
+
+// --- Stemming
+
+// We can improve the matches of the search queries
+// by applying stemming. 
+// If we create a custom analyzer to include synonyms, 
+// we should consider adding a language-based stemmer.
+// Stemmed words can be similarly highlighted, too.
+// Example: Creating a test analyzer which has a stemmer.
+PUT /stemming_test
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "synonym_test": {
+          "type": "synonym",
+          "synonyms": [
+            "firm => company",
+            "love, enjoy"
+          ]
+        },
+        "stemmer_test" : {
+          "type" : "stemmer",
+          "name" : "english"
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "synonym_test",
+            "stemmer_test"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text",
+        "analyzer": "my_analyzer"
+      }
+    }
+  }
+}
+
 ```

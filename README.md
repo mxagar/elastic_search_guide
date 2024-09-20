@@ -7,6 +7,7 @@ I created most of the content in this `README.md` after following the course [Co
 My repository is structured as follows:
 
 - [`README.md`](./README.md): main guide.
+- [`elasticsearch_catalogue.md`](./elasticsearch_catalogue.md): summary/catalogue of all the commands/queries in the guide.
 - [`notebooks/`](./notebooks/) contains notebooks with Python code about different related topics:
   - ElasticSearch usage with Python: [`elastic_intro.ipynb`](./notebooks/)
   - Data structures used for search operations: [`search_data_structures.ipynb`](./notebooks/search_data_structures.ipynb)

@@ -19,7 +19,10 @@ My repository is structured as follows:
 - [`notebooks/products-bulk.json`](./notebooks/products-bulk.json): dummy data which contains 1000 products with their properties, used in the guide/course.
   - Similarly, other dummy datasets added later: [`department.json`](./notebooks/department.json), [`orders-bulk.json`](./notebooks/orders-bulk.json), [`recipes-bulk.json`](./notebooks/recipes-bulk.json)
 
-Additionally, [`relevant_search/README.md`](./relevant_search/README.md) contains my notes on the book [Relevant SEARCH, by Doug Turnbull and John Berryman](https://www.manning.com/books/relevant-search).
+Additionally, I am adding some book summaries, to be completed somewhen in the near future, if I have time and I find them useful...
+
+- [`relevant_search/README.md`](./relevant_search/README.md) contains my *non-exhaustive* notes of contents in the book [Relevant SEARCH, by Doug Turnbull and John Berryman](https://www.manning.com/books/relevant-search).
+- [`ai_powered_search/README.md`](./ai_powered_search/README.md) will contain my *non-exhaustive* notes of the contents in the book [AI-Powered Search, by Trey Grainger, Doug Turnbull and Max Irwin ](https://www.manning.com/books/ai-powered-search).
 
 Mikel Sagardia, 2024.  
 No guarantees.

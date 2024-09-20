@@ -4,18 +4,21 @@ This are my notes on **ElasticSearch** and **search methods** with focus on Mach
 
 I created most of the content in this `README.md` after following the course [Complete Guide to Elasticsearch (Udemy), by Bo Andersen](https://www.udemy.com/course/elasticsearch-complete-guide), but extended it mainly consulting the official Elastic documentation and other sources that deal with data structures for search operations. The course by Bo Andersen has a Github repository with a summary of all the commands used: [codingexplained/complete-guide-to-elasticsearch](https://github.com/codingexplained/complete-guide-to-elasticsearch).
 
-My respository is structured as follows:
+My repository is structured as follows:
 
 - [`README.md`](./README.md): main guide.
 - [`notebooks/`](./notebooks/) contains notebooks with Python code about different related topics:
-  - ElasticSearch usage with Python
-  - Data structures used for search operations
+  - ElasticSearch usage with Python: [`elastic_intro.ipynb`](./notebooks/)
+  - Data structures used for search operations: [`search_data_structures.ipynb`](./notebooks/search_data_structures.ipynb)
     - Inverted indices
     - Doc Values
     - KD-Trees
     - etc.
   - ...
 - [`notebooks/products-bulk.json`](./notebooks/products-bulk.json): dummy data which contains 1000 products with their properties, used in the guide/course.
+  - Similarly, other dummy datasets added later: [`department.json`](./notebooks/department.json), [`orders-bulk.json`](./notebooks/orders-bulk.json), [`recipes-bulk.json`](./notebooks/recipes-bulk.json)
+
+Additionally, [`relevant_search/README.md`](./relevant_search/README.md) contains my notes on the book [Relevant SEARCH, by Doug Turnbull and John Berryman](https://www.manning.com/books/relevant-search).
 
 Mikel Sagardia, 2024.  
 No guarantees.

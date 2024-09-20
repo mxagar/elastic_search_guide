@@ -15,6 +15,7 @@ Table of contents:
   - [Joining Queries](#joining-queries)
   - [Controlling Query Results](#controlling-query-results)
   - [Aggregations](#aggregations)
+  - [Improving Search Results](#improving-search-results)
 
 
 ## Basic
@@ -3225,6 +3226,301 @@ GET /department/_search
             "field": "employees.age"
           }
         }
+      }
+    }
+  }
+}
+```
+
+## Improving Search Results
+
+Contents:
+
+- Proximity Searches
+- Affecting Relevance Scoring with Proximity
+- Fuzzy Queries
+- Adding Synonyms
+- Adding Synonyms from File
+
+```json
+// --- Proximity Searches
+
+// If we are looking for phrases,
+// all terms need to appear
+// and the word order matters, e.g., if we look for "spicy sauce"
+// - "Spicy Sauce" will be matched
+// - "Spicy Tomato Sauce" won't be matched, but we want it to match!
+// Solution: Adding the `slop` parameter to a `match_phrase` query
+// slop refers to how many positions a term can be moved,
+// it also allows different order of terms, i.e., it's the edit distance.
+// Also: the closest the terms are (proximity), the higher is the relevance score,
+// but there's no guarantee that the documents with the closest phrases
+// will rank the best, because the relevance can be affected by other factors.
+GET /proximity/_search
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "spicy sauce", // matches also "Spicy Tomato Sauce"
+        "slop": 1
+      }
+    }
+  }
+}
+
+// --- Affecting Relevance Scoring with Proximity
+
+// One easy way of affecting the relevance scores
+// is to create bool queries that contain
+// several optional queries.
+// For instance, match looks for the terms
+// and match_phrase
+// boosts relevance based on proximity
+// but allows some flexibility with the `slop` parameter.
+// Again, there's no guarantee that the most relevant
+// documents will be the first, but it's a heuristic
+// in that direction.
+GET /proximity/_search
+{
+  "query": {
+    "bool": { // Within bool we can have several queries
+      "must": [
+        {
+          "match": {
+            "title": {
+              "query": "spicy sauce"
+            }
+          }
+        }
+      ],
+      "should": [ // Optional, but if it matches, it boosts relevance
+        {
+          "match_phrase": {
+            "title": {
+              "query": "spicy sauce",
+              "slop": 5
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+// --- Fuzzy Queries
+
+// We can deal with typos and related misspelling errors
+// by using the `fuzziness` parameter in `match` queries. 
+// Also we can use the `fuzzy` query. 
+// Differences:
+// - The `fuzziness` parameter in a `match` query is a full text query, 
+// i.e., we use an analyzer.
+// - The `fuzzy` query is a term-level query, i.e., 
+// no analyzer is used and exact matches are targeted 
+// (with some edit distances, depending on teh fuzziness level).
+// Example: we want to search the term "lobster", but type "l0bster".
+// We set `fuzziness` to `auto`.
+// Fuzziness is implemented with the edit distance,
+// i.e., the Levenshtein distance between strings.
+// Generally, leaving "fuzziness": "auto" is the best approach.
+// The maximum edit distance under the hood is computed
+// depending on the term length; however, the maximum
+// value is 2:
+// a maximum number of 2 insertion/deletion/substitution/transpositions are allowed, 
+// since these cover 80% of all misspellings.
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "l0bster",
+        "fuzziness": "auto"
+      }
+    }
+  }
+}
+
+// Fuzziness is applied per term here.
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "l0bster love",
+        "operator": "and",
+        "fuzziness": 1
+      }
+    }
+  }
+}
+
+// Switching letters around with transpositions,
+// one transoposition is one edit distance unit.
+// Transpotions can be disabled (enabled by default).
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "lvie", // correct: "live"
+        "fuzziness": 1
+        //"fuzzy_transpositions": false
+      }
+    }
+  }
+}
+
+// Apart from adding the fuzziness parameter
+// we can also use the fuzzy query.
+// BUT: the fuzzy query is a term query, i.e.
+// it is not analyzed!
+// Therefore, in this case the search won't yield
+// any results, because the edit distance 
+// lobster <-> LOBSTER
+// it too high.
+GET /products/_search
+{
+  "query": {
+    "fuzzy": {
+      "name": {
+        "value": "LOBSTER", // correct "lobster"
+        "fuzziness": "auto" // Optional
+      }
+    }
+  }
+}
+
+// --- Adding Synonyms
+
+// Defining synonyms can help improve our queries 
+// because sometimes the same conecpt can be expressed
+// with different words. 
+// Synonyms are defined in the analyzer,
+// i.e., we actually create a custom analyzer 
+// which contains the synonyms in a `filter`.
+// There are a couple of things we should consider:
+// - The order/place in which the synonyms are inegrated matters: 
+// if we first lowercase and the define synonyms with capital letters,
+// they won't really work. 
+// Similarly, synonyms need to be defined before stemming, 
+// otherwise they won't be catched.
+// - The syntax is `matched term(s) => replacement term(s)`.
+// - If we define several matched terms with commas, 
+// all will be replaced one by one to the replacement terms.
+// - If we define several replacement terms, 
+// all will be used to replace the original terms,
+// and all will have the same position number.
+// - If we define alist of words, they all take the same position.
+// Example: Creating index with custom analyzer
+PUT /synonyms
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "my_synonym_filter": {
+          "type": "synonym", 
+          "synonyms": [
+            "awful => terrible",
+            "awesome => great, super", // one replaced by two, the two take same position
+            "elasticsearch, logstash, kibana => elk", // all 3 replaced by elk
+            "weird, strange" // if any present, both placed and in same position
+          ]
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "my_synonym_filter"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text",
+        "analyzer": "my_analyzer"
+      }
+    }
+  }
+}
+
+// Testing the analyzer (with synonyms)
+POST /synonyms/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "awesome" // great, super (both in position 0)
+}
+POST /synonyms/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "Elasticsearch" // elk
+}
+POST /synonyms/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "weird" // weird, strange (both in position 0)
+}
+POST /synonyms/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "Elasticsearch is awesome, but can also seem weird sometimes."
+}
+
+// Adding a test document
+POST /synonyms/_doc
+{
+  "description": "Elasticsearch is awesome, but can also seem weird sometimes."
+}
+
+// Searching the index for synonyms
+// Both terms will be found, even though we introduced only awesome.
+GET /synonyms/_search
+{
+  "query": {
+    "match": {
+      "description": "great"
+      //"description": "awesome"
+    }
+  }
+}
+
+// --- Adding Synonyms from File
+
+// Usually, we prefer to add synonyms to an analyzer using a file.
+// To that end, we need to use the parameter `synonyms_path`; there we put
+// - either an absolute path
+// - or a relative path to the config directory.
+// The syntax in the file is the same as when we specify the synonyms inline.
+PUT /synonyms
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "my_synonym_filter": {
+          "type": "synonym",
+          "synonyms_path": "analysis/synonyms.txt"
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "my_synonym_filter"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text",
+        "analyzer": "my_analyzer"
       }
     }
   }
